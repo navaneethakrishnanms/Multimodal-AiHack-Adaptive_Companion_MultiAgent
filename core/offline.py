@@ -110,6 +110,7 @@ def cloze_questions(
 ) -> list[dict]:
     """Fill-in-the-blank questions. The answer is always a literal word of the source sentence."""
     rng = random.Random(seed)
+    units = [u for u in units if u.kind != "figure"]  # an undescribed figure has no sentences worth asking about
     df = _doc_freq(kb.units)
     pool_terms = domain_terms(kb) or [w for w, c in df.items() if len(w) >= 5]
     out: list[dict] = []

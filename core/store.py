@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import threading
 import time
 import uuid
@@ -56,8 +57,11 @@ class Course:
 
     def add_file(self, path: Path) -> dict:
         with LOCK:
+            if path.resolve().parent != self.uploads.resolve():
+                shutil.copy2(path, self.uploads / path.name)
+                path = self.uploads / path.name
             before = len(self.kb.units)
-            added = self.kb.add_file(path)
+            added = self.kb.add_file(path, self.dir / "figures")
             self.kb.save(self.kb_path)
             self.rebuild()
             if self.topics:  # keep new material tagged against the existing map

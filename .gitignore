@@ -16,3 +16,7 @@ demo/
 data/figures/
 data/media/
 .pytest_cache/
+*.whisper.json
+data/previews/
+data/probes.json
+data/students/

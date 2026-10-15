@@ -39,7 +39,8 @@ ROOT = Path(__file__).resolve().parent.parent
 COURSES = {
     "ml": {
         "dir": ROOT / "data" / "sample_courses" / "ml",
-        "files": ["ml_notes.md", "lecture_slides.pptx", "lecture_transcript.vtt"],
+        "files": ["ml_notes.md", "lecture_slides.pptx", "lecture_transcript.vtt",
+                  "model_selection_chapter.pdf", "lecture2_model_selection.mp4"],
     },
     "os": {"dir": ROOT / "data" / "sample_courses" / "os", "files": ["os_notes.txt"]},
 }
@@ -56,12 +57,31 @@ def build_course(name: str, workdir: Path | None = None, extra_files: list[Path]
     """Fresh course (own temp data dir) from the bundled sample files, tagged with the curated map."""
     spec = COURSES[name]
     course = Course(workdir or Path(tempfile.mkdtemp(prefix=f"sc_eval_{name}_")))
+    course.skipped = []
     for f in spec["files"]:
-        course.add_file(spec["dir"] / f)
+        try:
+            course.add_file(spec["dir"] / f)
+        except ValueError as e:  # e.g. no Whisper available for the video: report, do not crash
+            course.skipped.append({"file": f, "reason": str(e)[:160]})
     for f in extra_files or []:
         course.add_file(f)
     course.analyze(prefer_seed=True)
     return course
+
+
+def vision_ok(course: Course) -> bool:
+    """True when at least one figure unit carries a real description (a vision model ran at ingestion)."""
+    return any(u.kind == "figure" and "not captured" not in u.text for u in course.kb.units)
+
+
+def usable(case: dict, courses: dict[str, "Course"]) -> bool:
+    """Skip cases whose ground truth is missing from the loaded course or that need an unavailable vision model."""
+    co = courses.get(case["course"])
+    if co is None:
+        return False
+    if case.get("requires_vision") and not vision_ok(co):
+        return False
+    return True
 
 
 def _relevant(case: dict) -> set[tuple[str, str]]:
@@ -94,7 +114,7 @@ def context_scores(retrieved: list, rel: set) -> dict:
 def eval_retrieval(courses: dict[str, Course], cases: list[dict], k: int = 4) -> dict:
     rows = []
     for c in cases:
-        if c.get("off_material") or c["course"] not in courses:
+        if c.get("off_material") or not usable(c, courses):
             continue
         hits = courses[c["course"]].retriever.search(c["question"], k=k)
         rows.append(context_scores([u for u, _ in hits], _relevant(c)))
@@ -118,7 +138,7 @@ def _gate_features(course: Course, q: str) -> tuple[float, float]:
 
 def calibrate_gate(courses: dict[str, Course], cases: list[dict]) -> dict:
     """Choose (min_score, min_coverage) on the dev split; report accuracy on the untouched test split."""
-    scored = [(c, *_gate_features(courses[c["course"]], c["question"])) for c in cases if c["course"] in courses]
+    scored = [(c, *_gate_features(courses[c["course"]], c["question"])) for c in cases if usable(c, courses)]
 
     def acc(split: str, tau: float, kappa: float) -> tuple[float, float, int, int]:
         inm = [(s, cv) for c, s, cv in scored if c["split"] == split and not c.get("off_material")]
@@ -186,8 +206,8 @@ def eval_generation(courses: dict[str, Course], cases: list[dict]) -> dict:
     from .tutor import answer as tutor_answer
 
     out: dict = {"mode": "online" if llm.available() else "offline", "model": llm.status()["model"] or None}
-    inm = [c for c in cases if not c.get("off_material") and c["course"] in courses]
-    off = [c for c in cases if c.get("off_material") and c["course"] in courses]
+    inm = [c for c in cases if not c.get("off_material") and usable(c, courses)]
+    off = [c for c in cases if c.get("off_material") and usable(c, courses)]
 
     # refusal: end-to-end tutor on off-material, plus the no-LLM gate-only number
     refused = 0
@@ -335,6 +355,10 @@ def run_all(testset_path: Path, *, skip_generation: bool = False, extra: dict[st
             "in_material": sum(1 for c in cases if not c.get("off_material")),
             "off_material": sum(1 for c in cases if c.get("off_material")),
             "courses": {n: len(c.kb.units) for n, c in courses.items()},
+            "evaluated_in_material": sum(1 for c in cases if not c.get("off_material") and usable(c, courses)),
+            "figure_cases_total": sum(1 for c in cases if c.get("requires_vision")),
+            "figure_cases_evaluated": sum(1 for c in cases if c.get("requires_vision") and usable(c, courses)),
+            "skipped_files": {n: getattr(c, "skipped", []) for n, c in courses.items() if getattr(c, "skipped", [])},
         },
         "retrieval": eval_retrieval(courses, cases),
         "retrieval_gate": calibrate_gate(courses, cases),

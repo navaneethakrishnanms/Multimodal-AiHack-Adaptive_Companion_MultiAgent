@@ -9,40 +9,44 @@
     "vision_model": ""
   },
   "testset": {
-    "in_material": 38,
+    "in_material": 47,
     "off_material": 18,
     "courses": {
-      "ml": 16,
+      "ml": 27,
       "os": 6
-    }
+    },
+    "evaluated_in_material": 44,
+    "figure_cases_total": 3,
+    "figure_cases_evaluated": 0,
+    "skipped_files": {}
   },
   "retrieval": {
     "k": 4,
-    "cases": 38,
-    "hit_rate": 1.0,
-    "mrr": 0.943,
-    "context_precision": 0.917,
-    "context_recall": 0.93
+    "cases": 44,
+    "hit_rate": 0.955,
+    "mrr": 0.905,
+    "context_precision": 0.875,
+    "context_recall": 0.886
   },
   "retrieval_gate": {
-    "min_score": 0.18,
-    "min_score_online": 0.15,
+    "min_score": 0.14,
+    "min_score_online": 0.14,
     "online_gate_test": {
-      "answered_in_material": 1.0,
-      "refused_off_material": 0.889
+      "answered_in_material": 0.952,
+      "refused_off_material": 0.667
     },
-    "min_coverage": 0.0,
+    "min_coverage": 0.3,
     "chosen_on": "dev split: best balanced accuracy over (min_score, min_coverage); middle of the tied optimum",
     "dev": {
-      "answered_in_material": 0.895,
+      "answered_in_material": 1.0,
       "refused_off_material": 1.0,
-      "n_in": 19,
+      "n_in": 23,
       "n_off": 9
     },
     "test": {
-      "answered_in_material": 0.842,
-      "refused_off_material": 0.889,
-      "n_in": 19,
+      "answered_in_material": 0.952,
+      "refused_off_material": 0.778,
+      "n_in": 21,
       "n_off": 9
     },
     "no_gate_baseline_test": {
@@ -55,15 +59,15 @@
     "model": null,
     "refusal_end_to_end": {
       "cases": 18,
-      "refused": 17,
-      "rate": 0.944
+      "refused": 16,
+      "rate": 0.889
     },
     "in_material": {
-      "cases": 38,
-      "answered": 33,
-      "answer_rate": 0.868,
-      "citation_precision": 0.818,
-      "citation_hit_rate": 1.0,
+      "cases": 44,
+      "answered": 43,
+      "answer_rate": 0.977,
+      "citation_precision": 0.775,
+      "citation_hit_rate": 0.953,
       "answer_mode": "offline-extractive"
     },
     "faithfulness": {
@@ -87,12 +91,13 @@
     "answer_grounded_in_source": 1.0,
     "repeat_rate_across_assessments": 0.0,
     "types": {
-      "mcq": 5,
-      "short": 6
+      "mcq": 7,
+      "short": 4
     },
     "difficulties": {
-      "hard": 9,
-      "medium": 2
+      "hard": 6,
+      "easy": 2,
+      "medium": 3
     }
   },
   "personalization": {
@@ -833,6 +838,6 @@
       }
     }
   },
-  "generated_at": "2026-10-15 04:35 UTC",
-  "elapsed_sec": 1.6
+  "generated_at": "2026-10-15 04:41 UTC",
+  "elapsed_sec": 1.9
 }

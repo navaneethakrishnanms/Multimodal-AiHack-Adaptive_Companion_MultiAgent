@@ -77,7 +77,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:00:00"
+          "00:01:15"
         ]
       ]
     },
@@ -213,7 +213,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:01:15"
+          "00:02:40"
         ]
       ]
     },
@@ -233,7 +233,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:01:15"
+          "00:02:40"
         ]
       ]
     },
@@ -253,7 +253,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:01:15"
+          "00:02:40"
         ]
       ]
     },
@@ -321,7 +321,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:02:40"
+          "00:03:45"
         ]
       ]
     },
@@ -353,7 +353,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:02:40"
+          "00:03:45"
         ]
       ]
     },
@@ -373,7 +373,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:02:40"
+          "00:03:45"
         ]
       ]
     },
@@ -393,7 +393,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:02:40"
+          "00:03:45"
         ]
       ]
     },
@@ -441,7 +441,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:00:00"
+          "00:01:15"
         ]
       ]
     },
@@ -669,7 +669,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:02:40"
+          "00:03:45"
         ]
       ]
     },
@@ -689,7 +689,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:02:40"
+          "00:03:45"
         ]
       ]
     },
@@ -729,7 +729,7 @@
         ],
         [
           "lecture_transcript.vtt",
-          "00:01:15"
+          "00:02:40"
         ]
       ]
     },
@@ -774,7 +774,150 @@
       "split": "test",
       "off_material": true,
       "question": "What is the difference between a mutex and a spinlock?"
+    },
+    {
+      "id": "ml31",
+      "course": "ml",
+      "split": "dev",
+      "question": "What is the difference between high bias and high variance?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.1"
+        ],
+        [
+          "lecture2_model_selection.mp4",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml32",
+      "course": "ml",
+      "split": "test",
+      "question": "What happens to training error and validation error as model complexity increases?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.1"
+        ],
+        [
+          "model_selection_chapter.pdf",
+          "p.2"
+        ],
+        [
+          "lecture2_model_selection.mp4",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml33",
+      "course": "ml",
+      "split": "dev",
+      "question": "What is k-fold cross-validation?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.3"
+        ],
+        [
+          "lecture2_model_selection.mp4",
+          "00:00:33"
+        ]
+      ]
+    },
+    {
+      "id": "ml34",
+      "course": "ml",
+      "split": "test",
+      "question": "What are typical values of k in cross-validation?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.3"
+        ],
+        [
+          "lecture2_model_selection.mp4",
+          "00:01:04"
+        ]
+      ]
+    },
+    {
+      "id": "ml35",
+      "course": "ml",
+      "split": "dev",
+      "question": "Why must the test set not be used to choose model complexity?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.2"
+        ],
+        [
+          "lecture2_model_selection.mp4",
+          "00:00:33"
+        ],
+        [
+          "ml_notes.md",
+          "para 8"
+        ]
+      ]
+    },
+    {
+      "id": "ml39",
+      "course": "ml",
+      "split": "dev",
+      "question": "How can I tell that my model is underfitting?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.1"
+        ],
+        [
+          "lecture2_model_selection.mp4",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "fig01",
+      "course": "ml",
+      "split": "test",
+      "requires_vision": true,
+      "question": "In the learning-rate chart, what happens to the training loss when alpha is 1.2?",
+      "relevant": [
+        [
+          "lecture_slides.pptx",
+          "slide 6 · figure 1"
+        ]
+      ]
+    },
+    {
+      "id": "fig02",
+      "course": "ml",
+      "split": "dev",
+      "requires_vision": true,
+      "question": "Around which model complexity is the validation error lowest in Figure 5.1?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.2 · figure 1"
+        ]
+      ]
+    },
+    {
+      "id": "fig03",
+      "course": "ml",
+      "split": "test",
+      "requires_vision": true,
+      "question": "In the cross-validation diagram, how many folds are shown and which one is held out in iteration 1?",
+      "relevant": [
+        [
+          "model_selection_chapter.pdf",
+          "p.3 · figure 1"
+        ]
+      ]
     }
   ],
-  "history": "v1 had 12 off-material queries; its dev split contained only trivially unrelated queries (score 0), so the first calibration gave 50% test refusal. v2 adds 4 paraphrased in-material and 6 hard off-material queries (shared vocabulary), split dev/test by alternating file order. Existing cases were not moved."
+  "history": "v1 had 12 off-material queries; its dev split contained only trivially unrelated queries (score 0), so the first calibration gave 50% test refusal. v2 adds 4 paraphrased in-material and 6 hard off-material queries (shared vocabulary), split dev/test by alternating file order. Existing cases were not moved. v3: transcript windowing bug fixed (a unit's timestamp label used to precede its first cue by up to 25 s); transcript ground-truth locations were re-derived by reading the VTT text, not from metric outcomes. v4: added the model-selection PDF + narrated lecture video cases and 3 figure cases (`requires_vision`; scored only when a vision model described the figures)."
 }

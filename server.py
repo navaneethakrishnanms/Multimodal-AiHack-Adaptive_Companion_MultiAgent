@@ -13,10 +13,10 @@ import uuid
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel
 
-from core import llm
+from core import llm, preview
 from core import recommend as recommend_mod, report as report_mod, revision
 from core.quiz import generate as quiz_generate, grade as quiz_grade
 from core.rootcause import PROBE_QUESTIONS, RootCause, topo_order
@@ -115,7 +115,7 @@ def status() -> dict:
 
 
 @app.post("/api/upload")
-async def upload(file: UploadFile = File(...)) -> dict:
+def upload(file: UploadFile = File(...)) -> dict:  # sync: transcription/vision can take a while, keep the loop free
     name = Path(file.filename or "upload").name
     dest = course.uploads / name
     with dest.open("wb") as f:
@@ -295,6 +295,72 @@ def brief(topic: str) -> dict:
     return revision.brief(course.kb, topic)
 
 
+# ---------------------------------------------------------- source viewer
+
+def _safe(name: str) -> str:
+    return Path(name).name  # no path traversal
+
+
+@app.get("/api/figure/{name}")
+def figure(name: str) -> FileResponse:
+    p = course.dir / "figures" / _safe(name)
+    if not p.exists() or p.suffix == ".txt":
+        raise HTTPException(404, "No such figure")
+    return FileResponse(p)
+
+
+@app.get("/api/media/{name}")
+def media(name: str) -> FileResponse:
+    p = course.uploads / _safe(name)
+    if not p.exists():
+        raise HTTPException(404, "No such file")
+    return FileResponse(p)  # Range requests are handled by Starlette, so the player can seek
+
+
+@app.get("/api/preview/{name}")
+def preview_image(name: str, page: int | None = None, slide: int | None = None) -> FileResponse:
+    p = course.uploads / _safe(name)
+    if not p.exists():
+        raise HTTPException(404, "No such file")
+    try:
+        if p.suffix.lower() == ".pdf" and page:
+            return FileResponse(preview.pdf_page_png(p, page, DATA / "previews"))
+        if p.suffix.lower() == ".pptx" and slide:
+            return FileResponse(preview.slide_png(p, slide, DATA / "previews"))
+    except ValueError as e:
+        raise HTTPException(404, str(e))
+    raise HTTPException(400, "Give ?page= for PDFs or ?slide= for slide decks")
+
+
+@app.get("/api/source/view")
+def source_view(file: str, loc: str) -> dict:
+    """Everything the Source Viewer needs to open a citation at its exact page / slide / timestamp."""
+    units = course.kb.units
+    idx = next((i for i, u in enumerate(units) if u.source_file == file and u.location == loc), None)
+    if idx is None:
+        raise HTTPException(404, "Unit not found")
+    u = units[idx]
+    out: dict = {"unit": u.to_dict(), "type": u.source_type, "kind": u.kind, "text": u.text, "topics": u.topics or []}
+    if u.source_type == "pdf":
+        page = u.page or int(u.location.split(".")[1].split()[0])
+        out.update(page=page, image_url=f"/api/preview/{file}?page={page}")
+    elif u.source_type == "pptx":
+        n = int(u.location.split()[1])
+        out.update(slide=n, image_url=f"/api/preview/{file}?slide={n}", image_kind="slide-preview")
+    elif u.source_type in ("video", "audio"):
+        out.update(media_url=f"/api/media/{file}", start_sec=u.start_sec or 0)
+    elif u.source_type == "transcript":
+        out.update(start_sec=u.start_sec or 0)
+    if u.figure_path:
+        out["figure_url"] = f"/api/figure/{u.figure_path}"
+        out["figure_described"] = "not captured" not in u.text
+    same = [(i, x) for i, x in enumerate(units) if x.source_file == file]
+    pos = next(k for k, (i, _x) in enumerate(same) if i == idx)
+    out["prev"] = same[pos - 1][1].location if pos > 0 else None
+    out["next"] = same[pos + 1][1].location if pos + 1 < len(same) else None
+    return out
+
+
 # ----------------------------------------------------------- students
 
 class StudentIn(BaseModel):
@@ -430,9 +496,13 @@ def demo_student() -> dict:
     import time as _t
 
     if not course.kb.units:
-        for f in ("ml_notes.md", "lecture_slides.pptx", "lecture_transcript.vtt"):
-            if (SAMPLE / f).exists():
-                course.add_file(SAMPLE / f)
+        for f in ("ml_notes.md", "lecture_slides.pptx", "lecture_transcript.vtt",
+                  "model_selection_chapter.pdf", "lecture2_model_selection.mp4"):
+            try:
+                if (SAMPLE / f).exists():
+                    course.add_file(SAMPLE / f)
+            except ValueError:  # e.g. no Whisper installed: the other files still work
+                continue
     course.analyze(prefer_seed=True)
     st = students.get("demo")
     st.reset()
