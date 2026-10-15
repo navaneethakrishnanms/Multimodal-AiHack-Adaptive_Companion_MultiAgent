@@ -3,304 +3,735 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Study Companion — source-grounded tutor</title>
+<title>Study Companion</title>
+<meta name="description" content="Source-grounded study companion: tutor, adaptive practice and prerequisite root-cause diagnosis from your own course material.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f6b5e'/%3E%3Cpath d='M9 9h10a4 4 0 0 1 4 4v10H13a4 4 0 0 1-4-4V9z' fill='none' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<script>tailwind = { config: { darkMode: 'class' } }</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.30.2/cytoscape.min.js"></script>
 <style>
-  :root{--bg:#0f1117;--card:#171a23;--line:#262b38;--tx:#e8eaf0;--mut:#8b93a7;--acc:#5b8cff;--ok:#3ecf8e;--bad:#ff6b6b;--warn:#ffb454}
+  :root{
+    --bg:#f6f3ec; --card:#fffdf8; --ink:#1c2430; --mut:#556070; --line:#e4dfd3; --soft:#f0ece1;
+    --acc:#0f6b5e; --acc-ink:#ffffff; --acc-soft:#dcefea;
+    --ok:#1b7f4b; --ok-soft:#e1f3e8; --warn:#8a5200; --warn-soft:#fdf0d5; --bad:#b3261e; --bad-soft:#fbe4e1;
+    --shadow:0 1px 2px rgba(40,30,10,.06),0 6px 20px rgba(40,30,10,.05);
+  }
+  html.dark{
+    --bg:#13161b; --card:#1b2027; --ink:#e8e6df; --mut:#a3acb9; --line:#2c333d; --soft:#222932;
+    --acc:#4fc3ae; --acc-ink:#04201b; --acc-soft:#16342e;
+    --ok:#6fd49a; --ok-soft:#14301f; --warn:#f0b655; --warn-soft:#352a12; --bad:#ff8f86; --bad-soft:#3a1c19;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.25);
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
-  .wrap{max-width:1020px;margin:0 auto;padding:20px 18px 60px}
-  header{display:flex;align-items:center;gap:14px;padding:10px 0 18px}
-  header h1{font-size:19px;margin:0;font-weight:650}
-  .tag{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:99px;padding:2px 9px}
-  nav{display:flex;gap:6px;margin-bottom:18px}
-  nav button{background:none;border:1px solid var(--line);color:var(--mut);padding:8px 16px;border-radius:9px;cursor:pointer;font-size:14px}
-  nav button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
-  .panel{display:none}.panel.on{display:block}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;margin-bottom:14px}
-  h2{font-size:15px;margin:0 0 12px;color:var(--tx)}
-  .mut{color:var(--mut);font-size:13px}
-  input[type=text],textarea,select{background:#0d0f15;border:1px solid var(--line);border-radius:9px;color:var(--tx);padding:10px 12px;font:inherit;width:100%}
-  textarea{resize:vertical;min-height:60px}
-  button.primary{background:var(--acc);border:0;color:#fff;padding:10px 18px;border-radius:9px;cursor:pointer;font-weight:600;font-size:14px}
-  button.primary:disabled{opacity:.45;cursor:default}
-  button.ghost{background:none;border:1px solid var(--line);color:var(--tx);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px}
+  html{color-scheme:light} html.dark{color-scheme:dark}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,.serif{font-family:ui-serif,Georgia,"Iowan Old Style","Palatino Linotype",serif;letter-spacing:-.01em}
+  a{color:var(--acc)}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+  header.top{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:650;font-size:18px}
+  .logo{width:30px;height:30px;border-radius:8px;background:var(--acc);display:grid;place-items:center}
+  nav.tabs{display:flex;gap:4px;overflow-x:auto;padding:6px 0 0}
+  nav.tabs button{background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);padding:9px 14px;font:inherit;font-weight:550;cursor:pointer;white-space:nowrap}
+  nav.tabs button:hover{color:var(--ink)}
+  nav.tabs button.on{color:var(--acc);border-bottom-color:var(--acc)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow)}
+  .card+.card{margin-top:16px}
+  .card h2{margin:0 0 4px;font-size:20px}
+  .sub{color:var(--mut);font-size:13.5px}
   .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-  .chip{display:inline-block;background:#20273a;border:1px solid var(--line);color:#c7cff0;border-radius:99px;padding:4px 11px;font-size:12px;margin:3px 4px 3px 0;cursor:pointer}
-  .chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-  .msg{padding:12px 14px;border-radius:11px;margin:10px 0;max-width:92%}
-  .msg.user{background:#1d2740;margin-left:auto}
-  .msg.bot{background:#141824;border:1px solid var(--line)}
-  .msg.bot.refused{border-color:var(--warn)}
-  .cite{margin-top:9px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:8px}
-  .cite a{color:var(--acc);cursor:pointer;text-decoration:none;margin-right:8px}
-  .excerpt{background:#0d0f15;border-left:3px solid var(--acc);padding:8px 10px;margin:6px 0;border-radius:0 8px 8px 0;color:#c6cddd;font-size:12.5px;white-space:pre-wrap}
-  .q{border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:12px}
-  .q .meta{font-size:11.5px;color:var(--mut);margin-bottom:8px}
-  .opt{display:block;margin:7px 0;padding:9px 12px;border:1px solid var(--line);border-radius:9px;cursor:pointer;font-size:14px}
-  .opt:hover{border-color:var(--acc)}
-  .opt.sel{border-color:var(--acc);background:#1a2440}
-  .fb{margin-top:9px;padding:9px 12px;border-radius:9px;font-size:13.5px}
-  .fb.ok{background:#10291f;color:#9fe8c5;border:1px solid #1e4a37}
-  .fb.bad{background:#2a1518;color:#ffb3b3;border:1px solid #57262b}
-  .bar{height:9px;background:#0d0f15;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
-  .bar i{display:block;height:100%;background:linear-gradient(90deg,#5b8cff,#3ecf8e)}
-  .trow{display:grid;grid-template-columns:1fr 120px 54px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
-  .drop{border:1.5px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--mut);cursor:pointer}
-  .drop.hover{border-color:var(--acc);color:var(--tx)}
-  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:8px}
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:repeat(2,minmax(0,1fr))} .g3{grid-template-columns:repeat(3,minmax(0,1fr))} .g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .tutor-grid{display:grid;gap:16px;grid-template-columns:minmax(0,1fr) minmax(320px,440px);align-items:start}
+  @media(max-width:1000px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.tutor-grid{grid-template-columns:1fr}}
+  @media(max-width:640px){.g2,.g3,.g4{grid-template-columns:1fr}.wrap{padding:0 14px}}
+  button.btn{font:inherit;font-weight:600;border-radius:10px;padding:9px 16px;border:1px solid var(--acc);background:var(--acc);color:var(--acc-ink);cursor:pointer;transition:filter .15s,transform .05s}
+  button.btn:hover{filter:brightness(1.07)} button.btn:active{transform:translateY(1px)}
+  button.btn:disabled{opacity:.5;cursor:default;filter:none}
+  button.ghost{font:inherit;font-weight:550;border-radius:10px;padding:8px 14px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+  button.ghost:hover{border-color:var(--acc);color:var(--acc)}
+  button.ghost:disabled{opacity:.5;cursor:default}
+  button.icon{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;display:grid;place-items:center}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+  input[type=text],input[type=number],textarea,select{font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px;width:100%}
+  select{width:auto} textarea{resize:vertical;min-height:64px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:999px;padding:3px 11px;font-size:12.5px;line-height:1.5;margin:2px 4px 2px 0}
+  .chip.pick{cursor:pointer;user-select:none} .chip.pick:hover{border-color:var(--acc)}
+  .chip.on{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+  .chip.src{cursor:pointer;background:var(--acc-soft);border-color:transparent;color:var(--acc);font-weight:550} .chip.src:hover{text-decoration:underline}
+  .chip.ok{background:var(--ok-soft);color:var(--ok);border-color:transparent} .chip.warn{background:var(--warn-soft);color:var(--warn);border-color:transparent} .chip.bad{background:var(--bad-soft);color:var(--bad);border-color:transparent}
+  .banner{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:4px 11px;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .banner.ok{background:var(--ok-soft);color:var(--ok)} .banner.warn{background:var(--warn-soft);color:var(--warn)} .banner.out{background:var(--soft);color:var(--mut);border:1px dashed var(--mut)}
+  .msg{padding:13px 16px;border-radius:14px;margin:12px 0;max-width:94%}
+  .msg.user{background:var(--acc-soft);margin-left:auto;border-bottom-right-radius:4px}
+  .msg.bot{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+  .msg.bot.ok{border-left:4px solid var(--ok)} .msg.bot.warn{border-left:4px solid var(--warn)}
+  .outside{border:1px dashed var(--mut);border-radius:10px;padding:10px 12px;margin-top:10px;background:var(--soft);font-size:14px}
+  .cite{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line);font-size:13px}
+  sup.cn{color:var(--acc);font-weight:700;cursor:pointer;padding:0 1px}
+  .bar{height:9px;background:var(--soft);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .bar>i{display:block;height:100%;border-radius:99px;transition:width .6s cubic-bezier(.2,.8,.2,1)}
+  .m0{background:var(--bad)} .m1{background:#c77700} .m2{background:#7aa21a} .m3{background:var(--ok)} .mn{background:var(--line)}
+  .trow{display:grid;grid-template-columns:minmax(120px,1.2fr) minmax(90px,1.6fr) 52px minmax(70px,.8fr);gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+  @media(max-width:640px){.trow{grid-template-columns:1fr 1fr 44px}.trow .hide-s{display:none}}
+  .drop{border:2px dashed var(--line);border-radius:14px;padding:30px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s;background:var(--soft)}
+  .drop:hover,.drop.hover{border-color:var(--acc);color:var(--ink);background:var(--acc-soft)}
+  .q{border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:14px;background:var(--card)}
+  .opt{display:block;margin:7px 0;padding:10px 13px;border:1px solid var(--line);border-radius:10px;cursor:pointer;background:var(--card)}
+  .opt:hover{border-color:var(--acc)} .opt.sel{border-color:var(--acc);background:var(--acc-soft)}
+  .fb{margin-top:12px;padding:12px 14px;border-radius:10px;font-size:14px}
+  .fb.ok{background:var(--ok-soft);color:var(--ink);border-left:4px solid var(--ok)} .fb.bad{background:var(--bad-soft);color:var(--ink);border-left:4px solid var(--bad)}
+  .excerpt{background:var(--soft);border-left:3px solid var(--acc);padding:9px 12px;border-radius:0 8px 8px 0;font-size:13.5px;white-space:pre-wrap;margin:8px 0}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .tile .n{font-family:ui-serif,Georgia,serif;font-size:30px;line-height:1.1}
+  .tile .l{color:var(--mut);font-size:12.5px;margin-top:4px}
+  .skel{position:relative;overflow:hidden;background:var(--soft);border-radius:8px;min-height:16px}
+  .skel::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--card) 70%,transparent),transparent);animation:sh 1.2s infinite}
+  @keyframes sh{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+  .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px;margin-right:8px}
   @keyframes sp{to{transform:rotate(360deg)}}
-  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#20273a;border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.3s;pointer-events:none}
-  .toast.on{opacity:1}
+  .pill{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--card);border-radius:999px;padding:4px 12px;font-size:12.5px;color:var(--mut)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--mut)} .dot.on{background:var(--ok)} .dot.off{background:#c77700}
+  #sv{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+  #sv .sv-head{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:space-between}
+  #sv .sv-body{padding:14px 16px;max-height:calc(100vh - 230px);overflow:auto}
+  #sv img.page{width:100%;border:1px solid var(--line);border-radius:8px;background:#fff}
+  #sv video,#sv audio{width:100%;border-radius:8px;background:#000}
+  .drawer-mode #sv{position:fixed;right:16px;top:100px;width:min(440px,calc(100vw - 32px));z-index:50}
+  .drawer-mode #sv .sv-body{max-height:calc(100vh - 250px)}
+  .empty{border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--mut)}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:10px;font-size:14px;opacity:0;transition:.25s;pointer-events:none;z-index:80;max-width:min(560px,92vw)}
+  .toast.on{opacity:1;transform:translateX(-50%)}
+  #cy{height:380px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  #cyP{height:300px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  .flip{perspective:800px;height:150px;cursor:pointer}
+  .flip>div{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d}
+  .flip.on>div{transform:rotateY(180deg)}
+  .flip .f,.flip .b{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--card);overflow:auto;font-size:14px}
+  .flip .b{transform:rotateY(180deg);background:var(--acc-soft)}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 5px 0 12px;vertical-align:-1px}
+  table.t{width:100%;border-collapse:collapse;font-size:13.5px} table.t th,table.t td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top} table.t th{color:var(--mut);font-weight:600}
+  .step{display:grid;grid-template-columns:34px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  .step .no{width:30px;height:30px;border-radius:50%;background:var(--acc);color:var(--acc-ink);display:grid;place-items:center;font-weight:700}
+  .hidden{display:none!important}
+  .card,.q,#rcResult,#reportBox{scroll-margin-top:130px}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <h1>Study Companion</h1>
-    <span class="tag">source-grounded tutor</span>
-    <span class="tag" id="kbStat">no material yet</span>
-  </header>
-
-  <nav>
-    <button data-t="upload" class="on">1 · Material</button>
-    <button data-t="tutor">2 · Tutor</button>
-    <button data-t="quiz">3 · Quiz</button>
-    <button data-t="dash">4 · Dashboard</button>
-  </nav>
-
-  <!-- ============ UPLOAD ============ -->
-  <section class="panel on" id="p-upload">
-    <div class="card">
-      <h2>Upload your course material</h2>
-      <div class="mut" style="margin-bottom:12px">PDF textbooks, PPTX slides, transcripts (VTT/SRT) and notes (TXT/MD). Every passage keeps its exact origin (page / slide / timestamp).</div>
-      <div class="drop" id="drop">Drop files here or click to choose<br><span style="font-size:12px">pdf · pptx · txt · md · vtt · srt</span></div>
-      <input type="file" id="file" multiple hidden>
-      <div id="upList" class="mut" style="margin-top:10px"></div>
-      <div class="row" style="margin-top:14px">
-        <button class="primary" id="btnAnalyze" disabled>Analyze → build topic map</button>
-        <span class="mut" id="analyzeStat"></span>
+<header class="top">
+  <div class="wrap">
+    <div class="row" style="justify-content:space-between;padding:12px 0 2px">
+      <div class="brand"><span class="logo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M5 4h9a5 5 0 0 1 5 5v11H10a5 5 0 0 1-5-5V4z"/><path d="M9 9h6M9 13h4"/></svg></span><span class="serif">Study Companion</span></div>
+      <div class="row">
+        <span class="pill" id="llmPill" title="Language model status"><span class="dot"></span><span id="llmTxt">checking…</span></span>
+        <label class="sub row" style="gap:6px">Student
+          <select id="studentSel" aria-label="Student"></select></label>
+        <button class="ghost" id="btnDemo" title="Seed a student whose real gap is a hidden prerequisite">Demo student</button>
+        <button class="icon" id="btnTheme" aria-label="Toggle light/dark theme" title="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
       </div>
-      <div id="topics" style="margin-top:12px"></div>
     </div>
+    <nav class="tabs" role="tablist">
+      <button data-tab="library" class="on" role="tab">Library</button>
+      <button data-tab="tutor" role="tab">Tutor</button>
+      <button data-tab="practice" role="tab">Practice</button>
+      <button data-tab="rootcause" role="tab">Root cause</button>
+      <button data-tab="progress" role="tab">Progress</button>
+      <button data-tab="evaluation" role="tab">Evaluation</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap" style="padding-top:20px;padding-bottom:70px" id="main">
+
+  <!-- ============ LIBRARY ============ -->
+  <section id="v-library">
+    <div class="card">
+      <h2 class="serif">Your course library</h2>
+      <p class="sub" style="margin:0 0 14px">Drop textbooks (PDF), slides (PPTX), lecture recordings (MP4/MP3/WAV), transcripts (VTT/SRT) and notes (MD/TXT). Every passage keeps its page, slide or timestamp; figures are extracted and described.</p>
+      <div class="drop" id="drop" tabindex="0" role="button" aria-label="Upload course files">
+        <div style="font-size:15px;color:var(--ink);font-weight:600">Drop files here or click to choose</div>
+        <div class="sub" style="margin-top:4px">pdf · pptx · mp4 · mp3 · wav · vtt · srt · md · txt</div>
+      </div>
+      <input type="file" id="file" multiple hidden>
+      <div id="upList" style="margin-top:12px"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="btnAnalyze" disabled>Build topic map</button>
+        <button class="ghost" id="btnSample">Try the sample ML course</button>
+        <button class="ghost" id="btnSampleOs">Sample OS course</button>
+        <span class="sub" id="analyzeStat" aria-live="polite"></span>
+      </div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h2 class="serif" style="font-size:17px">Files</h2><div id="libFiles"><div class="skel" style="height:90px"></div></div></div>
+      <div class="card"><h2 class="serif" style="font-size:17px">Topics &amp; prerequisites</h2><div id="libTopics"><div class="skel" style="height:90px"></div></div></div>
+    </div>
+    <div class="card" id="figCard"><h2 class="serif" style="font-size:17px">Figures &amp; diagrams</h2><p class="sub" style="margin:0 0 10px">Click a figure to open it in the Source Viewer.</p><div id="libFigs"></div></div>
   </section>
 
   <!-- ============ TUTOR ============ -->
-  <section class="panel" id="p-tutor">
-    <div class="card">
-      <h2>Ask your material</h2>
-      <div class="mut" style="margin-bottom:10px">Answers come only from your uploaded material, with citations that open the exact page / slide / timestamp.</div>
-      <div id="chat"></div>
-      <div class="row" style="margin-top:12px">
-        <textarea id="q" placeholder="e.g. Explain gradient descent and why the learning rate matters" rows="2"></textarea>
+  <section id="v-tutor" class="hidden">
+    <div class="tutor-grid">
+      <div class="card">
+        <div class="row" style="justify-content:space-between">
+          <div><h2 class="serif">Ask your material</h2>
+          <p class="sub" style="margin:0">Answers come only from your sources. Click a citation to open the exact page, slide or timestamp.</p></div>
+          <label class="sub row" style="gap:6px">Answer in
+            <select id="lang"><option value="en">English</option><option value="hi">हिन्दी</option></select></label>
+        </div>
+        <div id="chat" aria-live="polite" style="margin-top:6px"><div class="empty" id="chatEmpty">Ask a question about your course. Try an off-topic one too — the tutor should decline instead of guessing.</div></div>
+        <div class="row" style="margin-top:12px;align-items:flex-end">
+          <textarea id="q" rows="2" placeholder="e.g. Why does a learning rate that is too large make gradient descent diverge?" style="flex:1;min-width:220px"></textarea>
+          <div class="row"><button class="icon" id="btnMic" title="Ask by voice (browser speech recognition)" aria-label="Ask by voice"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+          <button class="btn" id="btnAsk">Ask</button></div>
+        </div>
       </div>
-      <div class="row" style="margin-top:10px">
-        <button class="primary" id="btnAsk">Ask</button>
-        <span class="mut">Try an off-topic question too — the tutor will decline instead of hallucinating.</span>
-      </div>
+      <div id="sv-slot"></div>
     </div>
   </section>
 
-  <!-- ============ QUIZ ============ -->
-  <section class="panel" id="p-quiz">
+  <!-- ============ PRACTICE ============ -->
+  <section id="v-practice" class="hidden">
     <div class="card">
-      <h2>Adaptive assessment</h2>
-      <div class="mut" style="margin-bottom:10px">Pick a scope. Every question is tagged to a topic, difficulty and source, and independently verified before it reaches you.</div>
-      <div id="qTopics" style="margin-bottom:10px"></div>
+      <div class="row" style="justify-content:space-between">
+        <div><h2 class="serif">Adaptive practice</h2>
+        <p class="sub" style="margin:0">Every question is tagged with topic, difficulty and source, and checked before you see it.</p></div>
+        <div class="row"><button class="ghost" id="btnIntake">New student intake</button><button class="ghost" id="btnDiag">Diagnostic quiz</button></div>
+      </div>
+      <div id="qTopics" style="margin:12px 0 8px"></div>
       <div class="row">
-        <select id="qCount" style="width:auto">
-          <option value="3">3 questions</option><option value="5" selected>5 questions</option><option value="8">8 questions</option>
-        </select>
-        <select id="qDiff" style="width:auto">
-          <option value="mixed" selected>Mixed difficulty</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
-        </select>
-        <button class="primary" id="btnQuiz">Generate quiz</button>
-        <span class="mut" id="quizStat"></span>
+        <select id="qCount"><option value="3">3 questions</option><option value="5" selected>5 questions</option><option value="8">8 questions</option></select>
+        <select id="qDiff"><option value="mixed">Mixed difficulty</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option></select>
+        <select id="qType"><option value="mcq,short">MCQ + short answer</option><option value="mcq">MCQ only</option><option value="short,numerical">Short + numerical</option><option value="mcq,short,numerical">All types</option></select>
+        <button class="btn" id="btnQuiz">Generate quiz</button>
+        <button class="ghost" id="btnReport">Post-assessment report</button>
+        <span class="sub" id="quizStat" aria-live="polite"></span>
       </div>
     </div>
     <div id="quizBox"></div>
+    <div id="reportBox"></div>
   </section>
 
-  <!-- ============ DASHBOARD ============ -->
-  <section class="panel" id="p-dash">
+  <!-- ============ ROOT CAUSE ============ -->
+  <section id="v-rootcause" class="hidden">
     <div class="card">
-      <h2>Learner model</h2>
-      <div class="mut" style="margin-bottom:12px">Mastery is estimated with Bayesian knowledge tracing and updated after every graded answer and quiz.</div>
-      <div id="mastery"><span class="mut">Answer some quiz questions first.</span></div>
-      <div class="row" style="margin-top:14px">
-        <button class="ghost" id="btnPlan">Build 7-day study plan</button>
+      <h2 class="serif">Why did I miss that?</h2>
+      <p class="sub" style="margin:0 0 12px">A wrong answer is often a symptom. Root cause blames the prerequisites of the topic you missed, tests the most likely one with two verified questions, and — if it is really weak — shows exactly what to re-read before you try again.</p>
+      <div class="row">
+        <label class="sub row" style="gap:6px">Topic I missed <select id="rcTopic" style="min-width:230px"></select></label>
+        <button class="btn" id="btnDiagnose">Find the root cause</button>
+        <span class="sub" id="rcStat" aria-live="polite"></span>
       </div>
-      <div id="planBox" style="margin-top:12px"></div>
+      <div class="legend sub" style="margin-top:12px">Mastery:<i style="background:#9aa4b2"></i>untested<i style="background:var(--bad)"></i>weak<i style="background:#c77700"></i>developing<i style="background:#7aa21a"></i>good<i style="background:var(--ok)"></i>mastered</div>
     </div>
+    <div class="grid g2" style="margin-top:16px;align-items:start">
+      <div class="card"><div id="cy" role="img" aria-label="Prerequisite graph coloured by mastery"></div><div id="rcReason" class="sub" style="margin-top:10px"></div></div>
+      <div>
+        <div class="card" id="rcBlame"><div class="empty">Pick a topic and press “Find the root cause”.</div></div>
+        <div id="rcProbe"></div>
+      </div>
+    </div>
+    <div id="rcResult"></div>
   </section>
-</div>
-<div class="toast" id="toast"></div>
+
+  <!-- ============ PROGRESS ============ -->
+  <section id="v-progress" class="hidden">
+    <div class="grid g4" id="progTiles"></div>
+    <div class="grid g2" style="margin-top:16px;align-items:start">
+      <div class="card"><h2 class="serif" style="font-size:18px">Mastery by topic</h2><p class="sub" style="margin:0 0 6px">Bayesian knowledge tracing, updated after every graded answer.</p><div id="mastery"><div class="skel" style="height:140px"></div></div></div>
+      <div class="card"><h2 class="serif" style="font-size:18px">Next best actions</h2><p class="sub" style="margin:0 0 6px">Each action says why it is recommended.</p><div id="recs"><div class="skel" style="height:140px"></div></div></div>
+    </div>
+    <div class="card"><div class="row" style="justify-content:space-between"><div><h2 class="serif" style="font-size:18px">Study schedule</h2><p class="sub" style="margin:0">Weak topics first, spaced by the forgetting curve.</p></div>
+      <div class="row"><label class="sub">Days to exam <input type="number" id="planDays" value="7" min="1" max="60" style="width:76px"></label><label class="sub">Minutes/day <input type="number" id="planMin" value="45" min="10" max="480" style="width:84px"></label><button class="ghost" id="btnPlan">Build schedule</button></div></div>
+      <div id="planBox" style="margin-top:12px"></div><div id="curveBox"></div></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><div><h2 class="serif" style="font-size:18px">Revision material</h2><p class="sub" style="margin:0">Flashcards and a spoken brief for your weakest topics, each linked to its source.</p></div>
+      <div class="row"><button class="ghost" id="btnCards">Make flashcards</button><button class="ghost" id="btnBrief">Listen to a brief</button></div></div>
+      <div id="briefBox"></div><div id="cardsBox" class="grid g3" style="margin-top:12px"></div></div>
+  </section>
+
+  <!-- ============ EVALUATION ============ -->
+  <section id="v-evaluation" class="hidden">
+    <div id="evalBox"><div class="grid g4"><div class="skel" style="height:90px"></div><div class="skel" style="height:90px"></div><div class="skel" style="height:90px"></div><div class="skel" style="height:90px"></div></div></div>
+  </section>
+</main>
+
+<!-- shared Source Viewer (moves between the Tutor column and a drawer) -->
+<aside id="sv" class="hidden" aria-label="Source viewer">
+  <div class="sv-head"><div id="svTitle" class="serif" style="font-weight:650"></div><div class="row"><button class="ghost" id="svPrev" aria-label="Previous passage">‹</button><button class="ghost" id="svNext" aria-label="Next passage">›</button><button class="ghost" id="svClose" aria-label="Close source viewer">✕</button></div></div>
+  <div class="sv-body" id="svBody"></div>
+</aside>
+
+<div id="modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:70;display:grid;place-items:center;padding:16px"><div class="card" style="max-width:560px;width:100%;max-height:88vh;overflow:auto" id="modalBody"></div></div>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
-const $ = s => document.querySelector(s);
-const api = async (path, body, method) => {
-  const r = await fetch(path, body ? {method: method||'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : undefined);
-  if (!r.ok) throw new Error((await r.json().catch(()=>({detail:r.statusText}))).detail || r.statusText);
-  return r.json();
+/* ============================== helpers ============================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const store = { get(k, d) { try { return localStorage.getItem(k) ?? d } catch { return d } }, set(k, v) { try { localStorage.setItem(k, v) } catch {} } };
+const pct = x => x == null ? '—' : Math.round(x * 100) + '%';
+const S = { student: store.get('student', 'default'), topics: [], status: null, tab: 'library', rc: {}, quizzes: {}, lastWrong: null, cy: null, lib: null };
+
+async function api(path, body, method) {
+  const opt = body !== undefined ? { method: method || 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : {};
+  const r = await fetch(path, opt);
+  let data = null; try { data = await r.json() } catch {}
+  if (!r.ok) throw new Error((data && (data.detail || data.message)) || r.statusText);
+  return data;
+}
+const get = (p, q = {}) => api(p + '?' + new URLSearchParams({ student: S.student, ...q }));
+function toast(msg, ms = 3200) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('on'), ms); }
+const busy = (el, on, label) => {
+  if (!el) return; el.disabled = on;
+  if (on) { if (label) { el.dataset.l = el.textContent; el.textContent = label } }
+  else if (el.dataset.l) { el.textContent = el.dataset.l; delete el.dataset.l }
 };
-let topics = [];
-const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); };
+const spin = t => `<span class="spin"></span>${esc(t)}`;
+const mClass = m => m == null ? 'mn' : m < .4 ? 'm0' : m < .6 ? 'm1' : m < .85 ? 'm2' : 'm3';
+const mColor = m => m == null ? '#9aa4b2' : m < .4 ? '#c0392b' : m < .6 ? '#c77700' : m < .85 ? '#7aa21a' : '#1b8a52';
+const barHtml = m => `<div class="bar" role="img" aria-label="${pct(m)}"><i class="${mClass(m)}" style="width:${m == null ? 0 : Math.round(m * 100)}%"></i></div>`;
+const srcChip = (file, loc, label) => `<span class="chip src" tabindex="0" role="button" data-act="open-src" data-file="${esc(file)}" data-loc="${esc(loc)}" title="Open in Source Viewer">${esc(label || (file + ' · ' + loc))}</span>`;
+const fileIcon = t => ({ pdf: '📕', pptx: '🖼', video: '🎬', audio: '🎧', transcript: '📝', text: '📄' }[t] || '📄');
 
-// ---------- tabs
-document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
-  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x===b));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  $('#p-' + b.dataset.t).classList.add('on');
-  if (b.dataset.t === 'dash') loadDash();
-});
+/* ============================== theme / status ============================== */
+function setTheme(dark) { document.documentElement.classList.toggle('dark', dark); store.set('theme', dark ? 'dark' : 'light'); if (S.cy) drawGraph(S.graphArgs) }
+setTheme(store.get('theme', matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') === 'dark');
+$('#btnTheme').onclick = () => setTheme(!document.documentElement.classList.contains('dark'));
 
-// ---------- upload
+async function loadStatus() {
+  try {
+    S.status = await api('/api/status');
+    const on = S.status.mode === 'online';
+    $('#llmPill .dot').className = 'dot ' + (on ? 'on' : 'off');
+    $('#llmTxt').textContent = on ? `Online · ${S.status.llm.model}` : 'Offline mode · extractive fallback';
+    $('#llmPill').title = on ? 'Language model connected' : ('No usable language model: ' + (S.status.llm.reason || 'not configured') + '. Answers quote your sources; quizzes are fill-in-the-blank.');
+  } catch { $('#llmTxt').textContent = 'server unreachable' }
+}
+
+/* ============================== tabs ============================== */
+function show(tab) {
+  S.tab = tab;
+  $$('nav.tabs button').forEach(b => { b.classList.toggle('on', b.dataset.tab === tab); b.setAttribute('aria-selected', b.dataset.tab === tab) });
+  ['library', 'tutor', 'practice', 'rootcause', 'progress', 'evaluation'].forEach(t => $('#v-' + t).classList.toggle('hidden', t !== tab));
+  placeSv();
+  if (tab === 'library') loadLibrary();
+  if (tab === 'practice') renderTopicChips();
+  if (tab === 'rootcause') { fillRcTopics(); drawGraphFromServer(); }
+  if (tab === 'progress') loadProgress();
+  if (tab === 'evaluation') loadEval();
+  window.scrollTo({ top: 0 });
+}
+$$('nav.tabs button').forEach(b => b.onclick = () => show(b.dataset.tab));
+
+/* ============================== students ============================== */
+async function loadStudents() {
+  try {
+    const { students } = await api('/api/students');
+    if (!students.find(s => s.id === S.student)) S.student = 'default';
+    $('#studentSel').innerHTML = students.map(s => `<option value="${esc(s.id)}" ${s.id === S.student ? 'selected' : ''}>${esc(s.name || s.id)}</option>`).join('') + '<option value="__new">+ New student…</option>';
+  } catch {}
+}
+$('#studentSel').onchange = async e => {
+  if (e.target.value === '__new') {
+    const name = prompt('Student name?'); if (!name) return loadStudents();
+    const st = await api('/api/students', { name }); S.student = st.id;
+  } else S.student = e.target.value;
+  store.set('student', S.student); await loadStudents(); refreshCurrent(); toast('Switched to ' + S.student);
+};
+function refreshCurrent() { if (S.tab === 'progress') loadProgress(); if (S.tab === 'rootcause') { drawGraphFromServer(); } if (S.tab === 'practice') { $('#quizBox').innerHTML = ''; $('#reportBox').innerHTML = '' } }
+
+$('#btnDemo').onclick = async () => {
+  const b = $('#btnDemo'); busy(b, true, 'Seeding…');
+  try {
+    const r = await api('/api/demo-student', {});
+    S.student = 'demo'; store.set('student', 'demo'); await loadStudents(); await loadStatus(); await loadTopics();
+    toast(r.story, 6000); show('practice'); selectTopic(r.start_topic);
+  } catch (e) { toast('Demo failed: ' + e.message) }
+  busy(b, false);
+};
+
+async function loadTopics() { try { const k = await api('/api/kb'); S.topics = k.topics || []; S.topicMode = k.topic_mode; renderTopicChips() } catch {} }
+
+/* ============================== LIBRARY ============================== */
 const drop = $('#drop');
 drop.onclick = () => $('#file').click();
-drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover'); };
+drop.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('#file').click() } };
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover') };
 drop.ondragleave = () => drop.classList.remove('hover');
-drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hover'); upload(e.dataTransfer.files); };
-$('#file').onchange = e => upload(e.target.files);
-async function upload(files){
-  for (const f of files){
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hover'); upload(e.dataTransfer.files) };
+$('#file').onchange = e => { upload(e.target.files); e.target.value = '' };
+const stageText = n => { const x = n.toLowerCase().split('.').pop(); return ({ pdf: 'Reading pages and extracting figures…', pptx: 'Reading slides and figures…', mp4: 'Transcribing speech with Whisper…', mp3: 'Transcribing speech with Whisper…', wav: 'Transcribing speech with Whisper…', m4a: 'Transcribing speech with Whisper…', mkv: 'Transcribing speech with Whisper…', mov: 'Transcribing speech with Whisper…', webm: 'Transcribing speech with Whisper…', vtt: 'Parsing timestamped transcript…', srt: 'Parsing timestamped transcript…' })[x] || 'Reading text…' };
+
+async function upload(files) {
+  const list = $('#upList'); let ok = 0;
+  for (const f of files) {
+    const id = 'u' + Math.random().toString(36).slice(2, 8);
+    list.insertAdjacentHTML('beforeend', `<div class="row" id="${id}" style="padding:7px 0;border-bottom:1px solid var(--line)"><span style="min-width:200px;font-weight:600">${esc(f.name)}</span><span class="sub" data-st>${spin(stageText(f.name))}</span></div>`);
     const fd = new FormData(); fd.append('file', f);
-    $('#upList').innerHTML += `<div><span class="spin"></span>${f.name} — ingesting…</div>`;
-    try{
-      const r = await fetch('/api/upload', {method:'POST', body: fd}).then(x=>x.json());
-      if (r.detail) throw new Error(r.detail);
-      $('#upList').innerHTML = $('#upList').innerHTML.replace(/<div><span class="spin"><\/span>[^<]*<\/div>/, '') + `<div>✓ ${r.file} — ${r.units_added} passages</div>`;
-      refreshKb(r.summary);
-      $('#btnAnalyze').disabled = false;
-    }catch(e){ toast('Upload failed: ' + e.message); }
+    try {
+      const r = await fetch('/api/upload', { method: 'POST', body: fd }); const j = await r.json();
+      if (!r.ok) throw new Error(j.detail || r.statusText);
+      $(`#${id} [data-st]`).innerHTML = `<span class="chip ok">✓ ${j.units_added} passages${j.figure_units ? ` · ${j.figure_units} figure${j.figure_units > 1 ? 's' : ''}` : ''}</span>`;
+      ok++;
+    } catch (e) { $(`#${id} [data-st]`).innerHTML = `<span class="chip bad">✗ ${esc(e.message)}</span>` }
   }
-}
-function refreshKb(sum){
-  $('#kbStat').textContent = `${sum.total_units} passages · ${Object.keys(sum.files).length} file(s)`;
-}
-async function boot(){
-  try{
-    const k = await api('/api/kb');
-    if (k.summary.total_units > 0){ refreshKb(k.summary); $('#btnAnalyze').disabled = false; }
-    topics = k.topics || []; renderTopics();
-  }catch(e){}
-}
-function renderTopics(){
-  $('#topics').innerHTML = topics.map(t => `<span class="chip">${t.name}</span>`).join('') ||
-    '<span class="mut">No topic map yet — upload material and click Analyze.</span>';
-  $('#qTopics').innerHTML = topics.map(t => `<span class="chip" data-t="${t.name}">${t.name}</span>`).join('');
-  document.querySelectorAll('#qTopics .chip').forEach(c => c.onclick = () => c.classList.toggle('on'));
+  await loadLibrary();
+  if (ok) { $('#analyzeStat').textContent = 'Next: build the topic map so questions and graphs know your concepts.'; $('#btnAnalyze').disabled = false }
 }
 
-// ---------- analyze
+async function loadLibrary() {
+  try {
+    const lib = await api('/api/library'); S.lib = lib; S.topics = lib.topics || [];
+    $('#btnAnalyze').disabled = !lib.files.length;
+    $('#libFiles').innerHTML = lib.files.length ? `<table class="t"><tr><th></th><th>File</th><th>Passages</th><th>Figures</th></tr>${lib.files.map(f => `<tr><td>${fileIcon(f.type)}</td><td>${esc(f.file)}</td><td>${f.units}</td><td>${f.figures || '—'}</td></tr>`).join('')}</table>` : '<div class="empty">No material yet. Upload files or try the sample course.</div>';
+    $('#libTopics').innerHTML = lib.topics.length ? `<div class="sub" style="margin-bottom:8px">${lib.topics.length} topics · ${lib.edges} prerequisite links · map: <b>${esc(lib.topic_mode || '—')}</b></div>` + lib.topics.map(t => `<span class="chip" title="${esc((t.prerequisites || []).length ? 'needs: ' + t.prerequisites.join(', ') : 'foundation topic')}">${esc(t.name)}</span>`).join('') : '<div class="empty">No topic map yet.</div>';
+    $('#libFigs').innerHTML = lib.figures.length ? `<div class="grid g4">${lib.figures.map(f => `<div class="tile" style="padding:10px;cursor:pointer" tabindex="0" role="button" data-act="open-src" data-file="${esc(f.file)}" data-loc="${esc(f.location)}"><img src="${f.url}" alt="Figure at ${esc(f.location)}" style="width:100%;height:110px;object-fit:contain;background:#fff;border-radius:6px"><div class="sub" style="margin-top:6px">${esc(f.file)}<br>${esc(f.location)}</div><span class="chip ${f.described ? 'ok' : 'warn'}">${f.described ? 'described' : 'not described'}</span></div>`).join('')}</div>` : '<div class="empty">No figures extracted yet (PDF and PPTX images appear here).</div>';
+    renderTopicChips();
+  } catch (e) { toast('Could not load library: ' + e.message) }
+}
+
 $('#btnAnalyze').onclick = async () => {
-  $('#btnAnalyze').disabled = true;
-  $('#analyzeStat').innerHTML = '<span class="spin"></span>Reading your material and mapping topics… (may take a minute)';
-  try{
-    const r = await api('/api/analyze', {}, 'POST');
-    topics = r.topics; renderTopics();
-    $('#analyzeStat').textContent = `✓ ${topics.length} topics mapped`;
-  }catch(e){ $('#analyzeStat').textContent = 'Failed: ' + e.message; }
-  $('#btnAnalyze').disabled = false;
+  const b = $('#btnAnalyze'); busy(b, true); $('#analyzeStat').innerHTML = spin('Mapping topics and prerequisites… (can take a minute with an LLM)');
+  try { const r = await api('/api/analyze', {}); $('#analyzeStat').textContent = `✓ ${r.topics.length} topics, ${r.edges} prerequisite links (${r.mode || 'map'})`; await loadLibrary() }
+  catch (e) { $('#analyzeStat').textContent = 'Failed: ' + e.message }
+  busy(b, false);
 };
-
-// ---------- tutor
-$('#btnAsk').onclick = async () => {
-  const q = $('#q').value.trim(); if (!q) return;
-  $('#q').value = '';
-  $('#chat').innerHTML += `<div class="msg user">${esc(q)}</div>`;
-  const id = 'a' + Date.now();
-  $('#chat').innerHTML += `<div class="msg bot" id="${id}"><span class="spin"></span>Searching your material…</div>`;
-  try{
-    const r = await api('/api/chat', {question: q});
-    let cites = '';
-    if (r.citations.length){
-      cites = '<div class="cite">Sources: ' + r.citations.map((c,i) =>
-        `<a onclick="showExcerpt('${id}',${i})">[${i+1}] ${c.source_file} · ${c.location}</a>`).join('') + '</div>';
-      window['_cites_' + id] = r.citations;
-    }
-    const el = document.getElementById(id);
-    el.classList.toggle('refused', !!r.refused);
-    el.innerHTML = esc(r.answer).replace(/\n/g,'<br>') + cites;
-  }catch(e){ document.getElementById(id).textContent = 'Error: ' + e.message; }
-};
-function showExcerpt(id, i){
-  const c = (window['_cites_' + id] || [])[i]; if (!c) return;
-  const el = document.getElementById(id);
-  el.querySelectorAll('.excerpt').forEach(x=>x.remove());
-  const d = document.createElement('div'); d.className = 'excerpt';
-  d.textContent = `[${i+1}] ${c.source_file} — ${c.location}\n${c.excerpt}`;
-  el.appendChild(d);
+async function sample(which, btn) {
+  busy(btn, true); $('#analyzeStat').innerHTML = spin('Loading the sample course (transcribing the lecture video the first time)…');
+  try { const r = await api('/api/load-sample', { course: which }); $('#analyzeStat').textContent = `✓ ${r.summary.total_units} passages, ${r.topics} topics` + (r.skipped.length ? ` · skipped ${r.skipped.map(s => s.file).join(', ')}` : ''); await loadLibrary(); await loadStatus() }
+  catch (e) { $('#analyzeStat').textContent = 'Failed: ' + e.message }
+  busy(btn, false);
 }
-function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+$('#btnSample').onclick = e => sample('ml', e.target);
+$('#btnSampleOs').onclick = e => sample('os', e.target);
 
-// ---------- quiz
+/* ============================== SOURCE VIEWER ============================== */
+const sv = $('#sv'); S.sv = null;
+function placeSv() {
+  const inTutor = S.tab === 'tutor';
+  $('#main').classList.toggle('drawer-mode', !inTutor);
+  if (inTutor) { $('#sv-slot').appendChild(sv); if (!S.sv) { sv.classList.remove('hidden'); renderSvEmpty() } }
+  else { document.body.appendChild(sv); sv.classList.toggle('hidden', !S.sv); }
+}
+function renderSvEmpty() { $('#svTitle').textContent = 'Source Viewer'; $('#svBody').innerHTML = '<div class="empty">Click any citation to open the exact page, slide or video timestamp here.</div>'; $('#svPrev').disabled = $('#svNext').disabled = true }
+async function openSource(file, loc) {
+  sv.classList.remove('hidden'); $('#svTitle').innerHTML = spin('Opening…'); $('#svBody').innerHTML = '<div class="skel" style="height:260px"></div>';
+  try {
+    const v = await api('/api/source/view?' + new URLSearchParams({ file, loc }));
+    S.sv = { file, loc, v }; renderSv(v);
+  } catch (e) { $('#svTitle').textContent = 'Source not found'; $('#svBody').innerHTML = `<div class="empty">${esc(e.message)}</div>` }
+}
+function renderSv(v) {
+  const u = v.unit; const label = v.page ? `page ${v.page}` : v.slide ? `slide ${v.slide}` : u.location;
+  $('#svTitle').innerHTML = `${fileIcon(v.type)} ${esc(u.source_file)} <span class="chip src" style="cursor:default">${esc(u.location)}</span>`;
+  let h = '';
+  if (v.image_url) h += `<img class="page" src="${v.image_url}" alt="${esc(label)} of ${esc(u.source_file)}"><div class="sub" style="margin:6px 0 10px">${v.image_kind === 'slide-preview' ? 'Slide preview redrawn from the slide’s own content' : 'Exact page: ' + esc(label)}</div>`;
+  if (v.figure_url) h += `<img class="page" src="${v.figure_url}" alt="Extracted figure" style="margin-bottom:6px"><div class="row" style="margin-bottom:8px"><span class="chip ${v.figure_described ? 'ok' : 'warn'}">${v.figure_described ? 'figure described by a vision model' : 'visual content not captured (no vision model at ingestion)'}</span></div>`;
+  if (v.media_url) h += `<${v.type === 'audio' ? 'audio' : 'video'} id="svMedia" controls preload="metadata" src="${v.media_url}#t=${v.start_sec || 0}"></${v.type === 'audio' ? 'audio' : 'video'}><div class="row" style="margin:8px 0"><span class="chip src" style="cursor:default">▶ jumped to ${esc(u.location)}</span></div>`;
+  else if (v.type === 'transcript') h += `<div class="row" style="margin:0 0 8px"><span class="chip src" style="cursor:default">⏱ transcript at ${esc(u.location)}</span></div>`;
+  h += `<div class="excerpt">${esc(v.text)}</div>`;
+  if (v.topics?.length) h += `<div>${v.topics.map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>`;
+  $('#svBody').innerHTML = h;
+  const m = $('#svMedia'); if (m) m.addEventListener('loadedmetadata', () => { try { m.currentTime = v.start_sec || 0 } catch {} }, { once: true });
+  $('#svPrev').disabled = !v.prev; $('#svNext').disabled = !v.next;
+  placeSv();
+}
+$('#svPrev').onclick = () => S.sv?.v.prev && openSource(S.sv.file, S.sv.v.prev);
+$('#svNext').onclick = () => S.sv?.v.next && openSource(S.sv.file, S.sv.v.next);
+$('#svClose').onclick = () => { S.sv = null; if (S.tab === 'tutor') renderSvEmpty(); else sv.classList.add('hidden') };
+
+/* ============================== TUTOR ============================== */
+function renderAnswer(r) {
+  const cites = r.citations || []; const idx = {}; cites.forEach((c, i) => idx[c.unit_id] = i + 1);
+  let txt = esc(r.answer).replace(/\[(u[0-9a-f]{8})\]/g, (m, id) => idx[id] ? `<sup class="cn" data-act="open-cn" data-n="${idx[id]}" title="Open source ${idx[id]}">[${idx[id]}]</sup>` : '').replace(/\n/g, '<br>');
+  const ok = r.grounding === 'source-backed';
+  const banner = ok ? '<span class="banner ok">✓ Source-backed</span>' : '<span class="banner warn">⚠ Not covered in your material</span>';
+  const mode = r.mode === 'offline-extractive' ? '<span class="chip warn" title="No language model connected: the tutor quotes your sources">offline extractive</span>' : '';
+  let h = `<div class="row" style="margin-bottom:8px">${banner}${mode}${r.topic ? `<span class="chip">${esc(r.topic)}</span>` : ''}</div><div>${txt}</div>`;
+  if (cites.length) h += `<div class="cite"><b>Sources</b> ${cites.map((c, i) => srcChip(c.source_file, c.location, `[${i + 1}] ${c.source_file} · ${c.location}`)).join('')}</div>`;
+  if (!ok) {
+    if (r.nearby?.length) h += `<div class="cite"><b>Closest material</b> ${r.nearby.map(c => srcChip(c.source_file, c.location)).join('')}</div>`;
+    if (r.outside_answer) h += `<div class="outside"><span class="banner out">Outside your materials — not source-backed</span><div style="margin-top:6px">${esc(r.outside_answer)}</div></div>`;
+    else if (S.status?.mode === 'online') h += `<div style="margin-top:10px"><button class="ghost" data-act="outside">Show a general-knowledge answer (clearly flagged)</button></div>`;
+  } else {
+    h += `<div class="row" style="margin-top:10px"><button class="ghost" data-act="speak">🔊 Listen</button>${r.topic ? `<button class="ghost" data-act="check" data-topic="${esc(r.topic)}">Check my understanding</button>` : ''}</div><div class="check"></div>`;
+  }
+  return h;
+}
+async function ask(q, allowOutside, node) {
+  if (!q) return;
+  $('#chatEmpty')?.remove();
+  if (!node) { $('#chat').insertAdjacentHTML('beforeend', `<div class="msg user">${esc(q)}</div><div class="msg bot" data-q="${esc(q)}">${spin('Searching your material…')}</div>`); node = $('#chat').lastElementChild }
+  try {
+    const r = await api('/api/chat', { question: q, student: S.student, allow_outside: !!allowOutside, language: $('#lang').value });
+    node.className = 'msg bot ' + (r.grounding === 'source-backed' ? 'ok' : 'warn'); node._r = r; node.innerHTML = renderAnswer(r);
+    if (r.citations?.length && S.tab === 'tutor' && !allowOutside && !S.sv) openSource(r.citations[0].source_file, r.citations[0].location);
+  } catch (e) { node.innerHTML = 'Error: ' + esc(e.message) }
+  node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+$('#btnAsk').onclick = () => { const q = $('#q').value.trim(); $('#q').value = ''; ask(q) };
+$('#q').onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#btnAsk').click() } };
+function speak(text, lang) {
+  if (!('speechSynthesis' in window)) return toast('This browser has no speech synthesis');
+  speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text.replace(/\[\d+\]|\[u[0-9a-f]{8}\]/g, '')); u.lang = lang === 'hi' ? 'hi-IN' : 'en-US'; speechSynthesis.speak(u);
+}
+const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
+$('#btnMic').onclick = () => {
+  if (!Rec) return toast('Voice input needs a browser with speech recognition (Chrome/Edge)');
+  const r = new Rec(); r.lang = $('#lang').value === 'hi' ? 'hi-IN' : 'en-US';
+  r.onresult = e => { $('#q').value = e.results[0][0].transcript; $('#btnAsk').click() }; r.onerror = () => toast('Could not hear you'); r.start(); toast('Listening…');
+};
+
+/* ============================== QUESTIONS (shared by Practice / Root cause) ============================== */
+function qCard(q, i, opts = {}) {
+  S.quizzes[q.id] = q;
+  const v = q.verified ? `<span class="chip ok" title="Key checked before it was shown">✓ verified · ${esc(q.verification || 'checked')}</span>` : '<span class="chip warn" title="Could not be independently checked">unverified</span>';
+  const src = q.source ? srcChip(q.source.source_file, q.source.location, `source: ${q.source.source_file} · ${q.source.location}`) : '';
+  const input = q.type === 'mcq' ? (q.options || []).map(o => `<div class="opt" tabindex="0" role="radio" data-act="pick">${esc(o)}</div>`).join('') : `<textarea class="free" rows="2" placeholder="${q.type === 'numerical' ? 'Your numeric answer' : 'Your answer'}"></textarea>`;
+  return `<div class="q" data-qid="${esc(q.id)}" data-topic="${esc(q.topic)}"><div class="row" style="margin-bottom:8px"><span class="chip">Q${i + 1} · ${esc(q.type)}</span><span class="chip">${esc(q.topic || '—')}</span><span class="chip ${q.difficulty === 'hard' ? 'bad' : q.difficulty === 'easy' ? 'ok' : 'warn'}">${esc(q.difficulty || '')}</span>${v}${src}</div>
+    <div style="font-weight:550;margin-bottom:6px">${esc(q.question)}</div>${input}
+    ${opts.noSubmit ? '' : `<div class="row" style="margin-top:10px"><button class="ghost" data-act="submit">Submit answer</button>${S.student === 'demo' ? `<button class="ghost" data-act="demo-pick" data-correct="0" title="Scripted demo student answers wrongly">demo: answer ✗</button><button class="ghost" data-act="demo-pick" data-correct="1" title="Scripted demo student answers correctly">demo: answer ✓</button>` : ''}</div><div class="fbbox"></div>`}</div>`;
+}
+const responseOf = card => { const s = $('.opt.sel', card); return s ? s.textContent : ($('.free', card)?.value.trim() || '') };
+
+async function submitAnswer(card) {
+  const qid = card.dataset.qid, resp = responseOf(card);
+  if (!resp) return toast('Pick or type an answer first');
+  const btn = $('[data-act=submit]', card); busy(btn, true);
+  try {
+    const r = await api('/api/grade', { question_id: qid, response: resp, student: S.student });
+    const q = S.quizzes[qid] || {};
+    let h = `<div class="fb ${r.correct ? 'ok' : 'bad'}"><b>${r.correct ? '✓ Correct' : '✗ Not quite'}</b> — model answer: <b>${esc(r.model_answer)}</b>${r.feedback ? `<div>${esc(r.feedback)}</div>` : ''}<div style="margin-top:6px">${esc(r.explanation)}</div>`;
+    if (r.source) h += `<div class="cite" style="margin-top:8px"><b>Check the source</b> ${srcChip(r.source.source_file, r.source.location)}</div>`;
+    if (!r.correct && r.misconception) h += `<div class="sub" style="margin-top:8px"><b>Likely misconception:</b> ${esc(r.misconception)}</div>`;
+    h += `<div class="row" style="margin-top:10px"><span class="sub">Mastery of “${esc(r.topic)}”</span><div style="width:140px">${barHtml(r.mastery)}</div><span class="sub">${pct(r.mastery_before)} → <b>${pct(r.mastery)}</b></span></div>`;
+    if (r.can_diagnose) h += `<div style="margin-top:10px"><button class="btn" data-act="rc-from" data-topic="${esc(r.topic)}">Find the root cause →</button></div>`;
+    h += '</div>';
+    $('.fbbox', card).innerHTML = h; $$('.opt', card).forEach(o => o.style.pointerEvents = 'none');
+    if (!r.correct) S.lastWrong = { topic: r.topic, qid };
+  } catch (e) { toast('Grading failed: ' + e.message); busy(btn, false) }
+}
+
+async function demoPick(card, correct) {
+  const r = await api('/api/demo/pick', { question_id: card.dataset.qid, correct });
+  const opt = $$('.opt', card).find(o => o.textContent === r.response);
+  if (opt) { $$('.opt', card).forEach(x => x.classList.remove('sel')); opt.classList.add('sel') } else { const f = $('.free', card); if (f) f.value = r.response }
+}
+
+/* ============================== PRACTICE ============================== */
+S.sel = new Set();
+function renderTopicChips() {
+  const box = $('#qTopics'); if (!box) return;
+  box.innerHTML = S.topics.length ? `<div class="sub" style="margin-bottom:4px">Scope (leave empty for the whole course)</div>` + S.topics.map(t => `<span class="chip pick ${S.sel.has(t.name) ? 'on' : ''}" tabindex="0" role="checkbox" data-act="chip" data-t="${esc(t.name)}">${esc(t.name)}</span>`).join('') : '<div class="empty">Build a topic map in the Library first.</div>';
+}
+function selectTopic(name) { S.sel = new Set([name]); renderTopicChips() }
 $('#btnQuiz').onclick = async () => {
-  const sel = [...document.querySelectorAll('#qTopics .chip.on')].map(c=>c.dataset.t);
-  $('#btnQuiz').disabled = true;
-  $('#quizStat').innerHTML = '<span class="spin"></span>Generating + verifying questions…';
-  try{
-    const r = await api('/api/quiz', {topics: sel, count: +$('#qCount').value, difficulty: $('#qDiff').value});
-    $('#quizStat').textContent = `✓ ${r.count} verified questions`;
-    $('#quizBox').innerHTML = r.questions.map((q,i) => qCard(q,i)).join('');
-    document.querySelectorAll('.opt').forEach(o => o.onclick = () => {
-      const qid = o.closest('.q').dataset.qid;
-      document.querySelectorAll(`.q[data-qid="${qid}"] .opt`).forEach(x=>x.classList.remove('sel'));
-      o.classList.add('sel');
-    });
-    document.querySelectorAll('.btnSubmit').forEach(b => b.onclick = () => submitAnswer(b));
-  }catch(e){ $('#quizStat').textContent = 'Failed: ' + e.message; }
-  $('#btnQuiz').disabled = false;
+  const b = $('#btnQuiz'); busy(b, true); $('#quizStat').innerHTML = spin('Generating and checking questions…'); $('#reportBox').innerHTML = '';
+  try {
+    const r = await api('/api/quiz', { topics: [...S.sel], count: +$('#qCount').value, difficulty: $('#qDiff').value, types: $('#qType').value.split(','), student: S.student });
+    S.lastQuiz = r.quiz_id; $('#quizStat').innerHTML = `✓ ${r.count} questions <span class="chip ${r.mode === 'online' ? 'ok' : 'warn'}">${r.mode === 'online' ? 'LLM-written · independently verified' : 'offline fill-in-the-blank'}</span>`;
+    $('#quizBox').innerHTML = r.questions.map((q, i) => qCard(q, i)).join('') || '<div class="empty">No questions could be generated for that scope.</div>';
+  } catch (e) { $('#quizStat').textContent = 'Failed: ' + e.message }
+  busy(b, false);
 };
-function qCard(q, i){
-  const opts = (q.options||[]).map(o => `<div class="opt">${esc(o)}</div>`).join('');
-  const input = q.type === 'mcq' ? opts :
-    `<textarea placeholder="${q.type==='numerical'?'Your numeric answer':'Your answer'}" class="freeans" rows="2"></textarea>`;
-  return `<div class="card q" data-qid="${q.id}">
-    <div class="meta">Q${i+1} · ${q.type} · ${q.difficulty||''} · topic: ${q.topic||'—'} · source: ${q.source_unit_id||'—'}${q.verified?' · ✓verified':''}</div>
-    <div style="margin-bottom:6px">${esc(q.question)}</div>${input}
-    <div class="row" style="margin-top:10px"><button class="ghost btnSubmit">Submit answer</button></div>
-    <div class="fb" style="display:none"></div></div>`;
+$('#btnDiag').onclick = async () => {
+  const b = $('#btnDiag'); busy(b, true); $('#quizStat').innerHTML = spin('Building a diagnostic across the course…');
+  try { const r = await api('/api/diagnostic', { student: S.student, max_questions: 6 }); S.lastQuiz = r.quiz_id; $('#quizStat').textContent = `✓ ${r.count} diagnostic questions spread across ${r.topics.length} topics`; $('#quizBox').innerHTML = r.questions.map((q, i) => qCard(q, i)).join('') }
+  catch (e) { $('#quizStat').textContent = 'Failed: ' + e.message }
+  busy(b, false);
+};
+$('#btnReport').onclick = async () => {
+  try {
+    const r = await get('/api/report'); if (!r.answered) return toast('Answer some questions first');
+    $('#reportBox').innerHTML = `<div class="card"><h2 class="serif">Post-assessment report</h2><div class="grid g3" style="margin:12px 0"><div class="tile"><div class="n">${r.correct}/${r.answered}</div><div class="l">correct (${pct(r.score)})</div></div><div class="tile"><div class="n">${r.weak_topics.length}</div><div class="l">weak topics</div></div><div class="tile"><div class="n">${r.misconceptions.length}</div><div class="l">likely misconceptions</div></div></div>
+      <table class="t"><tr><th>Topic</th><th>Result</th><th>Mastery</th><th>Review</th></tr>${r.topics.map(t => `<tr><td>${esc(t.topic)} ${t.weak ? '<span class="chip bad">weak</span>' : ''}</td><td>${t.correct}/${t.answered}</td><td style="width:140px">${barHtml(t.mastery)}</td><td>${(t.sources || []).map(s => srcChip(s.source_file, s.location)).join('')}${t.suspect_prerequisite ? `<div class="sub">suspect prerequisite: <b>${esc(t.suspect_prerequisite.topic)}</b> <button class="ghost" data-act="rc-from" data-topic="${esc(t.topic)}">Diagnose</button></div>` : ''}</td></tr>`).join('')}</table>
+      ${r.misconceptions.length ? `<h3 style="margin:14px 0 4px">Likely misconceptions</h3><ul>${r.misconceptions.map(m => `<li>${esc(m.note)} <span class="sub">(×${m.count})</span></li>`).join('')}</ul>` : ''}</div>`;
+    $('#reportBox').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { toast(e.message) }
+};
+$('#btnIntake').onclick = () => {
+  $('#modalBody').innerHTML = `<h2 class="serif">New student intake</h2><p class="sub">Tell the tutor where you think you stand; it seeds your starting estimate (real answers then take over).</p>
+    <div class="row" style="margin:10px 0"><label class="sub">Days until exam <input type="number" id="inDays" value="14" min="1" max="120" style="width:90px"></label></div>
+    ${S.topics.map(t => `<div class="row" style="justify-content:space-between;padding:4px 0"><span>${esc(t.name)}</span><select data-rate="${esc(t.name)}"><option value="1">never seen</option><option value="2">heard of it</option><option value="3" selected>so-so</option><option value="4">comfortable</option><option value="5">confident</option></select></div>`).join('') || '<div class="empty">Build the topic map first.</div>'}
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="ghost" data-act="close-modal">Cancel</button><button class="btn" data-act="save-intake">Save</button></div>`;
+  $('#modal').classList.remove('hidden');
+};
+
+/* ============================== ROOT CAUSE ============================== */
+function fillRcTopics(sel) {
+  const cur = sel || $('#rcTopic').value;
+  $('#rcTopic').innerHTML = S.topics.filter(t => (t.prerequisites || []).length).map(t => `<option ${t.name === cur ? 'selected' : ''}>${esc(t.name)}</option>`).join('') || '<option>(build a topic map)</option>';
 }
-async function submitAnswer(btn){
-  const card = btn.closest('.q'); const qid = card.dataset.qid;
-  const sel = card.querySelector('.opt.sel'); const free = card.querySelector('.freeans');
-  const resp = sel ? sel.textContent : (free ? free.value : '');
-  if (!resp){ toast('Pick or type an answer first'); return; }
-  btn.disabled = true;
-  try{
-    const r = await api('/api/grade', {question_id: qid, response: resp});
-    const fb = card.querySelector('.fb');
-    fb.style.display = 'block';
-    fb.className = 'fb ' + (r.correct ? 'ok' : 'bad');
-    fb.innerHTML = (r.correct ? '✓ Correct' : '✗ Not quite') +
-      ` — model answer: <b>${esc(r.model_answer)}</b><br>${esc(r.explanation)}` +
-      `<div class="mut" style="margin-top:5px">mastery → ${Math.round(r.mastery*100)}% on “${r.topic}”</div>`;
-  }catch(e){ toast('Grading failed: ' + e.message); btn.disabled = false; }
+async function drawGraphFromServer(extra = {}) {
+  try { const g = await get('/api/graph'); drawGraph({ g, ...extra }) } catch {}
+}
+function drawGraph(args) {
+  if (!args || !window.cytoscape) return; S.graphArgs = args; const { g, target, topic, path = [], el = 'cy' } = args;
+  const dark = document.documentElement.classList.contains('dark'); const ink = dark ? '#e8e6df' : '#1c2430';
+  const nodes = g.nodes.map(n => ({ data: { id: n.id, label: n.id, m: n.mastery, att: n.attempts, c: n.attempts ? mColor(n.mastery) : '#9aa4b2' }, classes: [n.id === target ? 'blame' : '', n.id === topic ? 'missed' : '', path.includes(n.id) ? 'onpath' : ''].join(' ') }));
+  const edges = g.edges.map(e => ({ data: { id: e.source + '>' + e.target, source: e.source, target: e.target }, classes: path.includes(e.source) && path.includes(e.target) ? 'flow' : '' }));
+  if (S.cy) { S.cy.destroy(); S.cy = null } cancelAnimationFrame(S.raf);
+  S.cy = cytoscape({ container: document.getElementById(el), elements: [...nodes, ...edges], layout: { name: 'breadthfirst', directed: true, padding: 14, spacingFactor: 1.05, avoidOverlap: true }, userZoomingEnabled: false, boxSelectionEnabled: false,
+    style: [
+      { selector: 'node', style: { 'background-color': 'data(c)', label: 'data(label)', color: ink, 'font-size': 11, 'text-wrap': 'wrap', 'text-max-width': 90, 'text-valign': 'bottom', 'text-margin-y': 5, width: 26, height: 26, 'border-width': 2, 'border-color': dark ? '#1b2027' : '#fffdf8' } },
+      { selector: 'edge', style: { width: 1.6, 'line-color': dark ? '#4a5563' : '#b9b2a2', 'target-arrow-color': dark ? '#4a5563' : '#b9b2a2', 'target-arrow-shape': 'triangle', 'curve-style': 'bezier' } },
+      { selector: '.missed', style: { 'border-width': 4, 'border-color': '#b3261e', width: 32, height: 32 } },
+      { selector: '.blame', style: { 'border-width': 4, 'border-color': dark ? '#4fc3ae' : '#0f6b5e', width: 34, height: 34, 'underlay-color': dark ? '#4fc3ae' : '#0f6b5e', 'underlay-opacity': .25, 'underlay-padding': 8 } },
+      { selector: 'edge.flow', style: { width: 3.5, 'line-color': dark ? '#4fc3ae' : '#0f6b5e', 'target-arrow-color': dark ? '#4fc3ae' : '#0f6b5e', 'line-style': 'dashed', 'line-dash-pattern': [8, 5] } },
+    ] });
+  S.cy.on('tap', 'node', e => { const n = e.target.id(); if (S.tab === 'rootcause') { $('#rcTopic').value = n; } });
+  // marching-ants animation along the path to the blamed prerequisite + pulse on the blamed node
+  let off = 0, t0 = performance.now();
+  const flow = S.cy.edges('.flow'), blame = S.cy.nodes('.blame');
+  if (flow.length || blame.length) (function tick(t) { off -= .6; flow.style('line-dash-offset', off); blame.style('underlay-padding', 8 + 5 * Math.sin((t - t0) / 260)); S.raf = requestAnimationFrame(tick) })(t0);
 }
 
-// ---------- dashboard
-async function loadDash(){
-  try{
-    const r = await api('/api/dashboard');
-    const t = r.report.topics;
-    const names = Object.keys(t);
-    if (!names.length){ $('#mastery').innerHTML = '<span class="mut">Answer some quiz questions first.</span>'; return; }
-    $('#mastery').innerHTML = names.map(n => {
-      const p = t[n];
-      const pct = Math.round(p.mastery*100);
-      return `<div class="trow"><div>${n}</div><div class="bar"><i style="width:${pct}%"></i></div><div>${pct}%</div></div>`;
-    }).join('') + (r.report.weak_topics.length ?
-      `<div class="mut" style="margin-top:10px">Weak topics: ${r.report.weak_topics.join(', ')}</div>` : '');
-  }catch(e){}
+async function diagnose(topic, exclude = []) {
+  $('#rcTopic').value = topic; $('#rcStat').innerHTML = spin('Blaming prerequisites and preparing a probe…'); $('#rcResult').innerHTML = ''; $('#rcProbe').innerHTML = '';
+  const b = $('#btnDiagnose'); busy(b, true);
+  try {
+    const d = await api('/api/rootcause/diagnose', { topic, student: S.student, exclude });
+    S.rc = { topic, d, exclude };
+    const g = await get('/api/graph');
+    const path = d.target ? [d.target, topic] : [];
+    drawGraph({ g, target: d.target, topic, path });
+    $('#rcReason').innerHTML = esc(d.reason);
+    $('#rcBlame').innerHTML = d.blame.length ? `<h2 class="serif" style="font-size:17px">Who is to blame for “${esc(topic)}”?</h2><p class="sub" style="margin:0 0 8px">blame ∝ (1 − mastery) × (1.5 if never tested), normalised</p>${d.blame.map((r, i) => `<div class="trow" style="grid-template-columns:minmax(120px,1.3fr) minmax(90px,1.5fr) 56px"><div>${i === 0 && d.target ? '🎯 ' : ''}<b>${esc(r.topic)}</b><div class="sub">${r.probed ? 'mastery ' + pct(r.mastery) : 'never tested'}</div></div><div class="bar"><i class="${i === 0 ? 'm1' : 'mn'}" style="width:${Math.round(r.blame * 100)}%;background:${i === 0 ? 'var(--acc)' : 'var(--line)'}"></i></div><div><b>${pct(r.blame)}</b></div></div>`).join('')}` : `<h2 class="serif" style="font-size:17px">No prerequisite to blame</h2><p class="sub">${esc(d.reason)}</p>${(d.self_review || []).map(s => srcChip(s.source_file, s.location)).join('')}`;
+    $('#rcStat').textContent = d.target ? `✓ Probing “${d.target}”` : 'Nothing to probe';
+    if (d.target) {
+      $('#rcProbe').innerHTML = `<div class="card"><h2 class="serif" style="font-size:17px">Probe: ${d.probe.length} verified question${d.probe.length === 1 ? '' : 's'} on “${esc(d.target)}”</h2><p class="sub" style="margin:0">Your answers here are the only evidence that changes its mastery.</p>${d.probe.map((q, i) => qCard(q, i, { noSubmit: true })).join('') || '<div class="empty">No verified probe questions could be generated.</div>'}
+        <div class="row" style="margin-top:12px">${d.probe.length ? '<button class="btn" data-act="probe-submit">Submit probe answers</button>' : ''}${S.student === 'demo' ? '<button class="ghost" data-act="demo-probe" data-correct="0">demo: answer ✗</button><button class="ghost" data-act="demo-probe" data-correct="1">demo: answer ✓</button>' : ''}</div></div>`;
+    }
+  } catch (e) { $('#rcStat').textContent = 'Failed: ' + e.message }
+  busy(b, false);
+}
+$('#btnDiagnose').onclick = () => diagnose($('#rcTopic').value);
+
+async function submitProbe() {
+  const d = S.rc.d, cards = $$('#rcProbe .q');
+  const responses = cards.map(c => ({ question_id: c.dataset.qid, response: responseOf(c) }));
+  if (responses.some(r => !r.response)) return toast('Answer both probe questions first');
+  const btn = $('[data-act=probe-submit]'); busy(btn, true, 'Checking…');
+  try {
+    const r = await api('/api/rootcause/probe-result', { probe_id: d.probe_id, responses, student: S.student });
+    S.rc.result = r; const g = await get('/api/graph');
+    drawGraph({ g, target: r.target, topic: r.topic, path: r.confirmed_weak ? [r.target, r.topic] : [] });
+    let h = `<div class="card" style="border-left:5px solid ${r.confirmed_weak ? 'var(--bad)' : 'var(--ok)'}"><div class="row" style="justify-content:space-between"><h2 class="serif">${r.confirmed_weak ? `Root cause found: ${esc(r.target)}` : `${esc(r.target)} looks fine`}</h2><div class="row"><span class="sub">mastery of ${esc(r.target)}</span><div style="width:130px">${barHtml(r.target_mastery)}</div><span class="sub">${pct(r.mastery_before)} → <b>${pct(r.target_mastery)}</b></span></div></div><p>${esc(r.message)}</p>`;
+    if (r.confirmed_weak) {
+      h += `<h3 style="margin:14px 0 2px">Repair path</h3><p class="sub" style="margin:0">Read these in order, then re-test “${esc(r.repair.retest_topic)}”.</p>${r.repair.steps.map(s => `<div class="step"><div class="no">${s.order}</div><div><b>${esc(s.topic)}</b> <span class="chip ${s.role === 'root cause' ? 'bad' : 'warn'}">${esc(s.role)}</span><span class="sub"> mastery ${pct(s.mastery)}</span><div style="margin-top:6px">${(s.sources || []).map(x => `${srcChip(x.source_file, x.location)}`).join('') || '<span class="sub">no source units tagged</span>'}</div>${(s.sources || [])[0] ? `<div class="excerpt">${esc(s.sources[0].excerpt)}</div>` : ''}</div></div>`).join('')}`;
+      if (r.repair.unverified_foundations?.length) h += `<p class="sub">Also untested (may need review): ${r.repair.unverified_foundations.map(esc).join(', ')}</p>`;
+      h += `<h3 style="margin:14px 0 2px">Re-test “${esc(r.retest.topic)}”</h3>${r.retest.questions.map((q, i) => qCard(q, i)).join('') || '<div class="empty">No re-test questions available.</div>'}`;
+    } else if (r.next_candidate) h += `<button class="btn" data-act="next-suspect" data-t="${esc(r.next_candidate)}">Try the next suspect: ${esc(r.next_candidate)}</button>`;
+    h += '</div>';
+    $('#rcResult').innerHTML = h; $('#rcProbe').innerHTML = ''; $('#rcResult').scrollIntoView({ behavior: 'smooth' });
+  } catch (e) { toast('Probe failed: ' + e.message); busy(btn, false) }
+}
+
+/* ============================== PROGRESS ============================== */
+async function loadProgress() {
+  $('#mastery').innerHTML = '<div class="skel" style="height:140px"></div>'; $('#recs').innerHTML = '<div class="skel" style="height:140px"></div>';
+  try {
+    const [dash, recs] = await Promise.all([get('/api/dashboard'), get('/api/recommendations')]);
+    const t = dash.report.topics; const names = Object.keys(t); S.report = dash.report;
+    const all = S.topics.map(x => x.name); const rows = (all.length ? all : names);
+    const attempted = names.filter(n => t[n].attempts); const avg = attempted.length ? attempted.reduce((s, n) => s + t[n].mastery, 0) / attempted.length : null;
+    const total = names.reduce((s, n) => s + t[n].attempts, 0), corr = names.reduce((s, n) => s + Math.round((t[n].accuracy || 0) * t[n].attempts), 0);
+    $('#progTiles').innerHTML = [[pct(avg), 'average mastery (answered topics)'], [attempted.length + '/' + rows.length, 'topics practised'], [dash.report.weak_topics.length, 'weak topics'], [total ? pct(corr / total) : '—', `accuracy over ${total} answers`]].map(([n, l]) => `<div class="tile"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+    $('#mastery').innerHTML = rows.map(n => { const r = t[n]; const m = r && r.attempts ? r.mastery : null; return `<div class="trow"><div>${esc(n)}${r?.misconceptions?.length ? ' <span class="chip warn" title="' + esc(r.misconceptions.at(-1)) + '">misconception</span>' : ''}</div>${barHtml(m)}<div><b>${m == null ? '—' : pct(m)}</b></div><div class="sub hide-s">${r && r.attempts ? r.attempts + ' answers' : 'not tested'}${r?.attempts ? ' · ' + pct(r.retention) + ' retained' : ''}</div></div>` }).join('') || '<div class="empty">Answer some questions in Practice to see your mastery here.</div>';
+    $('#recs').innerHTML = recs.actions.map(a => `<div style="padding:10px 0;border-bottom:1px solid var(--line)"><div class="row" style="justify-content:space-between"><b>${esc(a.title)}</b><span class="chip ${a.action === 'rootcause' ? 'bad' : a.action === 'spaced-review' ? 'warn' : ''}">${esc(a.action)}</span></div><div class="sub" style="margin:3px 0 6px"><b>Why:</b> ${esc(a.why)}</div>${(a.sources || []).map(s => srcChip(s.source_file, s.location)).join('')}<div style="margin-top:6px">${a.action === 'rootcause' ? `<button class="ghost" data-act="rc-from" data-topic="${esc(a.topic)}">Find the root cause</button>` : a.action === 'diagnostic' ? '<button class="ghost" data-act="go-diag">Start diagnostic</button>' : `<button class="ghost" data-act="practice-topic" data-topic="${esc(a.topic)}">Practise this</button>`}</div></div>`).join('') || '<div class="empty">No recommendations yet.</div>';
+  } catch (e) { $('#mastery').innerHTML = `<div class="empty">${esc(e.message)}</div>`; $('#recs').innerHTML = '' }
 }
 $('#btnPlan').onclick = async () => {
-  try{
-    const r = await api('/api/plan', {days: 7});
-    $('#planBox').innerHTML = r.plan.map(d =>
-      `<div class="mut" style="margin:5px 0"><b style="color:var(--tx)">Day ${d.day}</b> — ${d.topics.join(', ')}</div>`).join('');
-  }catch(e){ toast(e.message); }
+  try {
+    const r = await api('/api/plan', { days: +$('#planDays').value, minutes_per_day: +$('#planMin').value, student: S.student });
+    $('#planBox').innerHTML = `<div class="grid g4">${r.plan.map(d => `<div class="tile"><b>Day ${d.day}</b><div class="sub">${d.minutes_each} min each</div>${d.topics.map(t => `<div>${esc(t)}</div>`).join('')}${d.review.length ? `<div class="sub" style="margin-top:6px">↻ review: ${d.review.map(esc).join(', ')}</div>` : ''}</div>`).join('')}</div>`;
+    drawCurves(+$('#planDays').value);
+  } catch (e) { toast(e.message) }
+};
+function drawCurves(days) {
+  const t = S.report?.topics || {}; const ts = Object.entries(t).filter(([, r]) => r.attempts).sort((a, b) => a[1].mastery - b[1].mastery).slice(0, 4);
+  if (!ts.length) { $('#curveBox').innerHTML = ''; return }
+  const W = 640, H = 200, X = d => 40 + d / days * (W - 60), Y = r => 10 + (1 - r) * (H - 40); const cols = ['#b3261e', '#c77700', '#0f6b5e', '#556070'];
+  const lines = ts.map(([n, r], i) => { const s = Math.max(1.5, 6 * r.mastery); const r0 = Math.max(r.retention, .01); const d0 = -s * Math.log(r0); const pts = Array.from({ length: days + 1 }, (_, d) => `${X(d)},${Y(Math.exp(-(d0 + d) / s))}`).join(' '); return `<polyline points="${pts}" fill="none" stroke="${cols[i]}" stroke-width="2.4"/><text x="${W - 18}" y="${Y(Math.exp(-(d0 + days) / s)) - 4}" font-size="11" text-anchor="end" fill="${cols[i]}">${esc(n)}</text>` }).join('');
+  $('#curveBox').innerHTML = `<h3 style="margin:16px 0 4px">Forgetting curves of your weakest topics</h3><svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px" role="img" aria-label="Retention over the days to the exam"><line x1="40" y1="${Y(0)}" x2="${W - 20}" y2="${Y(0)}" stroke="var(--line)"/><line x1="40" y1="${Y(.5)}" x2="${W - 20}" y2="${Y(.5)}" stroke="var(--line)" stroke-dasharray="4"/>${lines}<text x="4" y="${Y(1) + 4}" font-size="10" fill="var(--mut)">100%</text><text x="8" y="${Y(.5) + 4}" font-size="10" fill="var(--mut)">50%</text><text x="${W / 2}" y="${H - 6}" font-size="11" text-anchor="middle" fill="var(--mut)">days from now (retention = e^(−t/s), s grows with mastery)</text></svg>`;
+}
+$('#btnCards').onclick = async () => {
+  const b = $('#btnCards'); busy(b, true, 'Writing cards…');
+  try { const r = await get('/api/flashcards'); $('#cardsBox').innerHTML = r.cards.map(c => `<div><div class="flip" tabindex="0" role="button" data-act="flip" aria-label="Flashcard, press to flip"><div><div class="f"><div class="sub">${esc(c.topic)}</div><div style="margin-top:6px">${esc(c.front)}</div></div><div class="b"><b>${esc(c.back)}</b><div style="margin-top:8px">${srcChip(c.source.source_file, c.source.location)}</div></div></div></div></div>`).join('') || '<div class="empty">No cards for these topics yet.</div>' }
+  catch (e) { toast(e.message) }
+  busy(b, false);
+};
+$('#btnBrief').onclick = async () => {
+  const w = S.report?.weak_topics?.[0] || S.topics[0]?.name; if (!w) return toast('Build a topic map first');
+  try { const r = await api('/api/brief?' + new URLSearchParams({ topic: w })); $('#briefBox').innerHTML = `<div class="excerpt"><b>${esc(r.topic)}</b> (${esc(r.mode)}): ${esc(r.text)}<div style="margin-top:6px">${r.sources.map(s => srcChip(s.source_file, s.location)).join('')}</div></div>`; speak(r.text, 'en') }
+  catch (e) { toast(e.message) }
 };
 
-boot();
+/* ============================== EVALUATION ============================== */
+async function loadEval() {
+  let R; try { R = await api('/api/evaluation') } catch (e) { $('#evalBox').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return }
+  const g = R.retrieval_gate, gen = R.generation, tile = (n, l, hint) => `<div class="tile" title="${esc(hint || '')}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const nm = x => x == null || x.status === 'skipped' ? '<span style="font-size:15px;color:var(--warn)">not measured</span>' : x.score;
+  const pol = { A_fixed: 'A · fixed order', B_bkt: 'B · BKT weakest-first', C_rootcause: 'C · RootCause' };
+  let h = `<div class="card"><div class="row" style="justify-content:space-between"><div><h2 class="serif">System evaluation</h2><p class="sub" style="margin:0">All numbers come from <code>scripts/run_eval.py</code> (run ${esc(R.generated_at || '?')}; LLM: ${R.llm.healthy ? esc(R.llm.model) : 'offline — ' + esc(R.llm.reason || 'not configured')}). ${esc(R.framework)}.</p></div></div></div>
+  <h3 style="margin:18px 0 8px">Retrieval &amp; grounding <span class="sub">(${R.testset.in_material} in-material + ${R.testset.off_material} off-material questions)</span></h3>
+  <div class="grid g4">${tile(pct(R.retrieval.hit_rate), 'retrieval hit rate (top-4)')}${tile(R.retrieval.mrr, 'MRR')}${tile(R.retrieval.context_precision, 'context precision')}${tile(R.retrieval.context_recall, 'context recall')}
+  ${tile(pct(g.test.refused_off_material), 'off-material refused (held-out, offline gate)', 'No gate: ' + pct(g.no_gate_baseline_test.refused_off_material))}${tile(pct(g.test.answered_in_material), 'in-material answered (same gate)')}
+  ${gen ? tile(nm(gen.faithfulness), 'faithfulness (claim support)') + tile(nm(gen.answer_relevancy), 'answer relevancy') : tile('—', 'generation not run')}</div>`;
+  if (gen) h += `<p class="sub" style="margin-top:8px">Tutor in this run: <b>${esc(gen.mode)}</b> · citation precision ${gen.in_material.citation_precision} · end-to-end refusal ${gen.refusal_end_to_end.refused}/${gen.refusal_end_to_end.cases}.</p>`;
+  const a = R.assessment;
+  h += `<h3 style="margin:18px 0 8px">Assessment quality <span class="sub">(${a.questions} questions, ${a.assessments} assessments, ${esc(a.mode)})</span></h3><div class="grid g4">${tile(pct(a.verified_rate), 'keys verified')}${tile(pct(a.tag_consistency), 'topic/source tags consistent')}${tile(pct(a.answer_grounded_in_source), 'answers grounded in source')}${tile(pct(a.repeat_rate_across_assessments), 'repeated across assessments')}</div>`;
+  h += `<h3 style="margin:18px 0 8px">Personalization: simulated students</h3><div class="card"><div class="row" style="justify-content:space-between"><div class="sub">30 latent-gap students × 6 sessions × 4 questions, paired across policies. Bars show mean ± std.</div><div class="row"><select id="evCourse">${Object.keys(R.personalization).map(c => `<option value="${c}">course: ${c}</option>`).join('')}</select><select id="evMetric"><option value="f1_R">F1 vs root-cause gaps</option><option value="gain">True gap closure</option><option value="f1_U">F1 vs all unknown gaps</option><option value="precision_R">Precision (root)</option><option value="recall_R">Recall (root)</option></select></div></div><div id="evChart"></div><div id="evPaired"></div></div>`;
+  $('#evalBox').innerHTML = h; S.evalR = R;
+  const draw = () => {
+    const res = R.personalization[$('#evCourse').value], m = $('#evMetric').value, keys = ['A_fixed', 'B_bkt', 'C_rootcause'];
+    const W = 640, H = 230, bw = 90, cols = ['#9aa4b2', '#c77700', 'var(--acc)'];
+    const bars = keys.map((k, i) => { const s = res.summary[k][m], x = 90 + i * 170, hh = s.mean * (H - 60), y = H - 34 - hh, e = s.std * (H - 60); return `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(hh, 1)}" rx="6" fill="${cols[i]}"/><line x1="${x + bw / 2}" y1="${Math.max(y - e, 6)}" x2="${x + bw / 2}" y2="${Math.min(y + e, H - 34)}" stroke="var(--ink)" stroke-width="1.6"/><text x="${x + bw / 2}" y="${y - 8 - Math.min(e, 30)}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--ink)">${s.mean.toFixed(2)}</text><text x="${x + bw / 2}" y="${H - 14}" text-anchor="middle" font-size="12" fill="var(--mut)">${pol[k]}</text>` }).join('');
+    $('#evChart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:${W}px;margin-top:10px" role="img" aria-label="Policy comparison">${bars}<line x1="60" y1="${H - 34}" x2="${W - 10}" y2="${H - 34}" stroke="var(--line)"/></svg>`;
+    const pk = ['f1_R', 'gain', 'f1_U'].map(x => ['C_minus_B.' + x, 'C_minus_A.' + x]).flat().filter(k => res.paired_vs_baselines[k]);
+    $('#evPaired').innerHTML = `<table class="t"><tr><th>Paired difference</th><th>mean</th><th>95% CI</th><th></th></tr>${pk.map(k => { const p = res.paired_vs_baselines[k], sig = p.ci95[0] > 0 || p.ci95[1] < 0; return `<tr><td>${k.replace('C_minus_', 'C − ').replace('.', ' · ')}</td><td>${p.mean_diff > 0 ? '+' : ''}${p.mean_diff}</td><td>[${p.ci95.join(', ')}]</td><td><span class="chip ${sig ? 'ok' : ''}">${sig ? 'CI excludes 0' : 'not significant'}</span></td></tr>` }).join('')}</table><p class="sub">${res.topics} topics, mean ${res.mean_unknown_topics} hidden-unknown (${res.mean_root_unknown_topics} root causes). C's reported gaps are root causes only; see docs/EVALUATION.md for the ablation and limitations.</p>`;
+  };
+  $('#evCourse').onchange = $('#evMetric').onchange = draw; draw();
+}
+
+/* ============================== delegated actions ============================== */
+document.addEventListener('click', async e => {
+  const el = e.target.closest('[data-act]'); if (!el) return; const a = el.dataset.act;
+  if (a === 'open-src') return openSource(el.dataset.file, el.dataset.loc);
+  if (a === 'open-cn') { const r = el.closest('.msg')._r; const c = r?.citations[+el.dataset.n - 1]; return c && openSource(c.source_file, c.location) }
+  if (a === 'pick') { const card = el.closest('.q'); $$('.opt', card).forEach(x => x.classList.remove('sel')); return el.classList.add('sel') }
+  if (a === 'chip') { const t = el.dataset.t; S.sel.has(t) ? S.sel.delete(t) : S.sel.add(t); return renderTopicChips() }
+  if (a === 'submit') return submitAnswer(el.closest('.q'));
+  if (a === 'demo-pick') return demoPick(el.closest('.q'), el.dataset.correct === '1');
+  if (a === 'demo-probe') return Promise.all($$('#rcProbe .q').map(c => demoPick(c, el.dataset.correct === '1')));
+  if (a === 'rc-from') { show('rootcause'); fillRcTopics(el.dataset.topic); return diagnose(el.dataset.topic) }
+  if (a === 'probe-submit') return submitProbe();
+  if (a === 'next-suspect') return diagnose(S.rc.topic, [...(S.rc.exclude || []), S.rc.result.target]);
+  if (a === 'speak') return speak($('div:nth-child(2)', el.closest('.msg')).textContent, $('#lang').value);
+  if (a === 'outside') { const n = el.closest('.msg'); return ask(n.dataset.q, true, n) }
+  if (a === 'check') {
+    const box = $('.check', el.closest('.msg')); box.innerHTML = spin('Preparing one question…');
+    try { const r = await api('/api/quiz', { topics: [el.dataset.topic], count: 1, types: ['mcq'], student: S.student }); box.innerHTML = r.questions.map((q, i) => qCard(q, i)).join('') || '<div class="sub">No question available.</div>' } catch (er) { box.textContent = er.message } return;
+  }
+  if (a === 'flip') return el.classList.toggle('on');
+  if (a === 'practice-topic') { show('practice'); return selectTopic(el.dataset.topic) }
+  if (a === 'go-diag') { show('practice'); return $('#btnDiag').click() }
+  if (a === 'close-modal') return $('#modal').classList.add('hidden');
+  if (a === 'save-intake') {
+    const self_rating = {}; $$('[data-rate]').forEach(s => self_rating[s.dataset.rate] = +s.value);
+    try { await api('/api/intake', { student: S.student, exam_days: +$('#inDays').value, self_rating }); $('#modal').classList.add('hidden'); toast('Intake saved — starting estimates seeded') } catch (er) { toast(er.message) }
+  }
+});
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-act=pick],[data-act=chip],[data-act=flip],.chip.src,[data-act=open-src]')) { e.preventDefault(); e.target.click() } if (e.key === 'Escape') $('#modal').classList.add('hidden') });
+$('#modal').addEventListener('click', e => { if (e.target.id === 'modal') e.target.classList.add('hidden') });
+
+/* ============================== boot ============================== */
+(async function boot() {
+  await Promise.all([loadStatus(), loadStudents()]);
+  await loadLibrary(); setInterval(loadStatus, 30000); placeSv();
+})();
 </script>
 </body>
 </html>

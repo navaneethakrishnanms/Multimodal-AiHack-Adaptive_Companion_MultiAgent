@@ -7,6 +7,7 @@ degrades to a deterministic offline mode and the UI says so.
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import uuid
@@ -488,6 +489,64 @@ def rootcause_probe_result(inp: ProbeResultIn) -> dict:
     return result
 
 
+# ------------------------------------------------------------- sample courses
+
+SAMPLE_COURSES = {
+    "ml": ("ml", ["ml_notes.md", "lecture_slides.pptx", "lecture_transcript.vtt",
+                  "model_selection_chapter.pdf", "lecture2_model_selection.mp4"]),
+    "os": ("os", ["os_notes.txt"]),
+}
+
+
+def load_sample(which: str = "ml") -> dict:
+    """Ingest a bundled course (skipping files that cannot be read here) and apply its curated topic map."""
+    if which not in SAMPLE_COURSES:
+        raise HTTPException(404, "Unknown sample course")
+    sub, files = SAMPLE_COURSES[which]
+    folder = ROOT / "data" / "sample_courses" / sub
+    course.clear()
+    skipped = []
+    for f in files:
+        try:
+            course.add_file(folder / f)
+        except ValueError as e:
+            skipped.append({"file": f, "reason": str(e)[:140]})
+    course.analyze(prefer_seed=True)
+    return {"summary": course.kb.summary(), "topics": len(course.topics), "skipped": skipped}
+
+
+class SampleIn(BaseModel):
+    course: str = "ml"
+
+
+@app.post("/api/load-sample")
+def load_sample_endpoint(inp: SampleIn) -> dict:
+    return load_sample(inp.course)
+
+
+@app.get("/api/library")
+def library() -> dict:
+    files: dict[str, dict] = {}
+    figures = []
+    for u in course.kb.units:
+        f = files.setdefault(u.source_file, {"file": u.source_file, "type": u.source_type, "units": 0, "figures": 0})
+        f["units"] += 1
+        if u.kind == "figure":
+            f["figures"] += 1
+            figures.append({"file": u.source_file, "location": u.location, "url": f"/api/figure/{u.figure_path}",
+                            "described": "not captured" not in u.text, "text": u.text[:200]})
+    return {"files": list(files.values()), "figures": figures, "topics": course.topics, "topic_mode": course.mode,
+            "edges": sum(len(v) for v in course.graph.values())}
+
+
+@app.get("/api/evaluation")
+def evaluation() -> JSONResponse:
+    path = ROOT / "eval_report.json"
+    if not path.exists():
+        raise HTTPException(404, "Run `python scripts/run_eval.py` first")
+    return JSONResponse(json.loads(path.read_text(encoding="utf-8")))
+
+
 # ------------------------------------------------------------- demo student
 
 @app.post("/api/demo-student")
@@ -495,14 +554,8 @@ def demo_student() -> dict:
     """Seed a student whose hidden gap is a prerequisite (Overfitting) of a topic they will miss."""
     import time as _t
 
-    if not course.kb.units:
-        for f in ("ml_notes.md", "lecture_slides.pptx", "lecture_transcript.vtt",
-                  "model_selection_chapter.pdf", "lecture2_model_selection.mp4"):
-            try:
-                if (SAMPLE / f).exists():
-                    course.add_file(SAMPLE / f)
-            except ValueError:  # e.g. no Whisper installed: the other files still work
-                continue
+    if not course.kb.units or "Overfitting" not in course.topic_names():
+        load_sample("ml")
     course.analyze(prefer_seed=True)
     st = students.get("demo")
     st.reset()
