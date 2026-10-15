@@ -1,0 +1,67 @@
+{
+  "retrieval": {
+    "cases": 10,
+    "hit_rate@6": 1.0,
+    "mrr": 0.717
+  },
+  "generation": {
+    "on_material_questions": 10,
+    "faithfulness": 0.8,
+    "answer_relevancy": 1.0,
+    "off_material_questions": 4,
+    "refusal_accuracy": 1.0
+  },
+  "personalization": {
+    "weak": {
+      "accuracy_sim": 0.35,
+      "questions_asked": 12,
+      "repetition_rate": 0.0,
+      "mastery_gain_avg": 0.169,
+      "final_mastery": {
+        "Gradient Descent": 0.1319,
+        "Introduction to Machine Learning": 0.6,
+        "Learning Paradigms": 0.6,
+        "Linear Regression": 0.6,
+        "Linear Regression Optimization": 0.1433,
+        "Machine Learning Fundamentals": 0.1574,
+        "Machine Learning Paradigms": 0.1574,
+        "Regularization": 0.4334,
+        "Supervised vs Unsupervised": 0.9461
+      }
+    },
+    "medium": {
+      "accuracy_sim": 0.6,
+      "questions_asked": 8,
+      "repetition_rate": 0.0,
+      "mastery_gain_avg": 0.076,
+      "final_mastery": {
+        "Gradient Descent": 0.1433,
+        "Gradient descent and learning rates": 0.9461,
+        "Learning paradigms": 0.6,
+        "Linear Regression": 0.1574,
+        "Linear regression and the normal equations": 0.1433,
+        "Regularization": 0.1392,
+        "What is Machine Learning?": 0.1574
+      }
+    },
+    "strong": {
+      "accuracy_sim": 0.85,
+      "questions_asked": 12,
+      "repetition_rate": 0.0,
+      "mastery_gain_avg": 0.431,
+      "final_mastery": {
+        "Gradient Descent": 0.7366,
+        "Gradient descent": 0.9461,
+        "Introduction to Machine Learning": 0.1574,
+        "Linear Regression": 0.8988,
+        "Linear regression": 0.6,
+        "Regularization": 0.9863,
+        "Supervised learning": 0.6,
+        "Supervised vs Unsupervised": 0.6,
+        "Supervised vs Unsupervised Learning": 0.6
+      }
+    }
+  },
+  "elapsed_sec": 516.8,
+  "kb_units": 13
+}

@@ -1,0 +1,17 @@
+[
+  {"question": "What is the definition of machine learning in terms of task, experience and performance?", "source_file": "ml_notes.md", "location": "para 1"},
+  {"question": "What is the difference between supervised and unsupervised learning?", "source_file": "ml_notes.md", "location": "para 2"},
+  {"question": "What does reinforcement learning optimize?", "source_file": "ml_notes.md", "location": "para 2"},
+  {"question": "What is the closed-form solution for linear regression with MSE?", "source_file": "ml_notes.md", "location": "para 3"},
+  {"question": "What is the gradient descent update rule and what is alpha?", "source_file": "ml_notes.md", "location": "para 3"},
+  {"question": "How does L2 regularization differ from L1 regularization?", "source_file": "ml_notes.md", "location": "para 5"},
+  {"question": "What does the normal equations cost and why prefer gradient descent?", "source_file": "ml_notes.md", "location": "para 3"},
+  {"question": "Why does stochastic gradient descent make cheaper steps?", "source_file": "lecture_transcript.vtt", "location": "00:02:40"},
+  {"question": "What are the three paradigms of machine learning?", "source_file": "lecture_slides.pptx", "location": "slide 1"},
+  {"question": "What happens if the learning rate is too large?", "source_file": "lecture_slides.pptx", "location": "slide 4"},
+
+  {"question": "What is the capital of France?", "off_material": true},
+  {"question": "How do transformer models use self-attention?", "off_material": true},
+  {"question": "What is the recipe for chocolate cake?", "off_material": true},
+  {"question": "Who won the 2018 FIFA World Cup?", "off_material": true}
+]

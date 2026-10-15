@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Study Companion — source-grounded tutor</title>
+<style>
+  :root{--bg:#0f1117;--card:#171a23;--line:#262b38;--tx:#e8eaf0;--mut:#8b93a7;--acc:#5b8cff;--ok:#3ecf8e;--bad:#ff6b6b;--warn:#ffb454}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+  .wrap{max-width:1020px;margin:0 auto;padding:20px 18px 60px}
+  header{display:flex;align-items:center;gap:14px;padding:10px 0 18px}
+  header h1{font-size:19px;margin:0;font-weight:650}
+  .tag{font-size:11px;color:var(--mut);border:1px solid var(--line);border-radius:99px;padding:2px 9px}
+  nav{display:flex;gap:6px;margin-bottom:18px}
+  nav button{background:none;border:1px solid var(--line);color:var(--mut);padding:8px 16px;border-radius:9px;cursor:pointer;font-size:14px}
+  nav button.on{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+  .panel{display:none}.panel.on{display:block}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:18px;margin-bottom:14px}
+  h2{font-size:15px;margin:0 0 12px;color:var(--tx)}
+  .mut{color:var(--mut);font-size:13px}
+  input[type=text],textarea,select{background:#0d0f15;border:1px solid var(--line);border-radius:9px;color:var(--tx);padding:10px 12px;font:inherit;width:100%}
+  textarea{resize:vertical;min-height:60px}
+  button.primary{background:var(--acc);border:0;color:#fff;padding:10px 18px;border-radius:9px;cursor:pointer;font-weight:600;font-size:14px}
+  button.primary:disabled{opacity:.45;cursor:default}
+  button.ghost{background:none;border:1px solid var(--line);color:var(--tx);padding:9px 14px;border-radius:9px;cursor:pointer;font-size:13px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .chip{display:inline-block;background:#20273a;border:1px solid var(--line);color:#c7cff0;border-radius:99px;padding:4px 11px;font-size:12px;margin:3px 4px 3px 0;cursor:pointer}
+  .chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+  .msg{padding:12px 14px;border-radius:11px;margin:10px 0;max-width:92%}
+  .msg.user{background:#1d2740;margin-left:auto}
+  .msg.bot{background:#141824;border:1px solid var(--line)}
+  .msg.bot.refused{border-color:var(--warn)}
+  .cite{margin-top:9px;font-size:12.5px;border-top:1px dashed var(--line);padding-top:8px}
+  .cite a{color:var(--acc);cursor:pointer;text-decoration:none;margin-right:8px}
+  .excerpt{background:#0d0f15;border-left:3px solid var(--acc);padding:8px 10px;margin:6px 0;border-radius:0 8px 8px 0;color:#c6cddd;font-size:12.5px;white-space:pre-wrap}
+  .q{border:1px solid var(--line);border-radius:11px;padding:14px;margin-bottom:12px}
+  .q .meta{font-size:11.5px;color:var(--mut);margin-bottom:8px}
+  .opt{display:block;margin:7px 0;padding:9px 12px;border:1px solid var(--line);border-radius:9px;cursor:pointer;font-size:14px}
+  .opt:hover{border-color:var(--acc)}
+  .opt.sel{border-color:var(--acc);background:#1a2440}
+  .fb{margin-top:9px;padding:9px 12px;border-radius:9px;font-size:13.5px}
+  .fb.ok{background:#10291f;color:#9fe8c5;border:1px solid #1e4a37}
+  .fb.bad{background:#2a1518;color:#ffb3b3;border:1px solid #57262b}
+  .bar{height:9px;background:#0d0f15;border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,#5b8cff,#3ecf8e)}
+  .trow{display:grid;grid-template-columns:1fr 120px 54px;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .drop{border:1.5px dashed var(--line);border-radius:12px;padding:26px;text-align:center;color:var(--mut);cursor:pointer}
+  .drop.hover{border-color:var(--acc);color:var(--tx)}
+  .spin{display:inline-block;width:15px;height:15px;border:2px solid var(--line);border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite;vertical-align:-2px;margin-right:8px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#20273a;border:1px solid var(--line);padding:10px 18px;border-radius:10px;font-size:13.5px;opacity:0;transition:.3s;pointer-events:none}
+  .toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Study Companion</h1>
+    <span class="tag">source-grounded tutor</span>
+    <span class="tag" id="kbStat">no material yet</span>
+  </header>
+
+  <nav>
+    <button data-t="upload" class="on">1 · Material</button>
+    <button data-t="tutor">2 · Tutor</button>
+    <button data-t="quiz">3 · Quiz</button>
+    <button data-t="dash">4 · Dashboard</button>
+  </nav>
+
+  <!-- ============ UPLOAD ============ -->
+  <section class="panel on" id="p-upload">
+    <div class="card">
+      <h2>Upload your course material</h2>
+      <div class="mut" style="margin-bottom:12px">PDF textbooks, PPTX slides, transcripts (VTT/SRT) and notes (TXT/MD). Every passage keeps its exact origin (page / slide / timestamp).</div>
+      <div class="drop" id="drop">Drop files here or click to choose<br><span style="font-size:12px">pdf · pptx · txt · md · vtt · srt</span></div>
+      <input type="file" id="file" multiple hidden>
+      <div id="upList" class="mut" style="margin-top:10px"></div>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="btnAnalyze" disabled>Analyze → build topic map</button>
+        <span class="mut" id="analyzeStat"></span>
+      </div>
+      <div id="topics" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- ============ TUTOR ============ -->
+  <section class="panel" id="p-tutor">
+    <div class="card">
+      <h2>Ask your material</h2>
+      <div class="mut" style="margin-bottom:10px">Answers come only from your uploaded material, with citations that open the exact page / slide / timestamp.</div>
+      <div id="chat"></div>
+      <div class="row" style="margin-top:12px">
+        <textarea id="q" placeholder="e.g. Explain gradient descent and why the learning rate matters" rows="2"></textarea>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="primary" id="btnAsk">Ask</button>
+        <span class="mut">Try an off-topic question too — the tutor will decline instead of hallucinating.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ ============ -->
+  <section class="panel" id="p-quiz">
+    <div class="card">
+      <h2>Adaptive assessment</h2>
+      <div class="mut" style="margin-bottom:10px">Pick a scope. Every question is tagged to a topic, difficulty and source, and independently verified before it reaches you.</div>
+      <div id="qTopics" style="margin-bottom:10px"></div>
+      <div class="row">
+        <select id="qCount" style="width:auto">
+          <option value="3">3 questions</option><option value="5" selected>5 questions</option><option value="8">8 questions</option>
+        </select>
+        <select id="qDiff" style="width:auto">
+          <option value="mixed" selected>Mixed difficulty</option><option value="easy">Easy</option><option value="medium">Medium</option><option value="hard">Hard</option>
+        </select>
+        <button class="primary" id="btnQuiz">Generate quiz</button>
+        <span class="mut" id="quizStat"></span>
+      </div>
+    </div>
+    <div id="quizBox"></div>
+  </section>
+
+  <!-- ============ DASHBOARD ============ -->
+  <section class="panel" id="p-dash">
+    <div class="card">
+      <h2>Learner model</h2>
+      <div class="mut" style="margin-bottom:12px">Mastery is estimated with Bayesian knowledge tracing and updated after every graded answer and quiz.</div>
+      <div id="mastery"><span class="mut">Answer some quiz questions first.</span></div>
+      <div class="row" style="margin-top:14px">
+        <button class="ghost" id="btnPlan">Build 7-day study plan</button>
+      </div>
+      <div id="planBox" style="margin-top:12px"></div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const api = async (path, body, method) => {
+  const r = await fetch(path, body ? {method: method||'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)} : undefined);
+  if (!r.ok) throw new Error((await r.json().catch(()=>({detail:r.statusText}))).detail || r.statusText);
+  return r.json();
+};
+let topics = [];
+const toast = (m) => { const t = $('#toast'); t.textContent = m; t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 2600); };
+
+// ---------- tabs
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x===b));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+  $('#p-' + b.dataset.t).classList.add('on');
+  if (b.dataset.t === 'dash') loadDash();
+});
+
+// ---------- upload
+const drop = $('#drop');
+drop.onclick = () => $('#file').click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover'); };
+drop.ondragleave = () => drop.classList.remove('hover');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hover'); upload(e.dataTransfer.files); };
+$('#file').onchange = e => upload(e.target.files);
+async function upload(files){
+  for (const f of files){
+    const fd = new FormData(); fd.append('file', f);
+    $('#upList').innerHTML += `<div><span class="spin"></span>${f.name} — ingesting…</div>`;
+    try{
+      const r = await fetch('/api/upload', {method:'POST', body: fd}).then(x=>x.json());
+      if (r.detail) throw new Error(r.detail);
+      $('#upList').innerHTML = $('#upList').innerHTML.replace(/<div><span class="spin"><\/span>[^<]*<\/div>/, '') + `<div>✓ ${r.file} — ${r.units_added} passages</div>`;
+      refreshKb(r.summary);
+      $('#btnAnalyze').disabled = false;
+    }catch(e){ toast('Upload failed: ' + e.message); }
+  }
+}
+function refreshKb(sum){
+  $('#kbStat').textContent = `${sum.total_units} passages · ${Object.keys(sum.files).length} file(s)`;
+}
+async function boot(){
+  try{
+    const k = await api('/api/kb');
+    if (k.summary.total_units > 0){ refreshKb(k.summary); $('#btnAnalyze').disabled = false; }
+    topics = k.topics || []; renderTopics();
+  }catch(e){}
+}
+function renderTopics(){
+  $('#topics').innerHTML = topics.map(t => `<span class="chip">${t.name}</span>`).join('') ||
+    '<span class="mut">No topic map yet — upload material and click Analyze.</span>';
+  $('#qTopics').innerHTML = topics.map(t => `<span class="chip" data-t="${t.name}">${t.name}</span>`).join('');
+  document.querySelectorAll('#qTopics .chip').forEach(c => c.onclick = () => c.classList.toggle('on'));
+}
+
+// ---------- analyze
+$('#btnAnalyze').onclick = async () => {
+  $('#btnAnalyze').disabled = true;
+  $('#analyzeStat').innerHTML = '<span class="spin"></span>Reading your material and mapping topics… (may take a minute)';
+  try{
+    const r = await api('/api/analyze', {}, 'POST');
+    topics = r.topics; renderTopics();
+    $('#analyzeStat').textContent = `✓ ${topics.length} topics mapped`;
+  }catch(e){ $('#analyzeStat').textContent = 'Failed: ' + e.message; }
+  $('#btnAnalyze').disabled = false;
+};
+
+// ---------- tutor
+$('#btnAsk').onclick = async () => {
+  const q = $('#q').value.trim(); if (!q) return;
+  $('#q').value = '';
+  $('#chat').innerHTML += `<div class="msg user">${esc(q)}</div>`;
+  const id = 'a' + Date.now();
+  $('#chat').innerHTML += `<div class="msg bot" id="${id}"><span class="spin"></span>Searching your material…</div>`;
+  try{
+    const r = await api('/api/chat', {question: q});
+    let cites = '';
+    if (r.citations.length){
+      cites = '<div class="cite">Sources: ' + r.citations.map((c,i) =>
+        `<a onclick="showExcerpt('${id}',${i})">[${i+1}] ${c.source_file} · ${c.location}</a>`).join('') + '</div>';
+      window['_cites_' + id] = r.citations;
+    }
+    const el = document.getElementById(id);
+    el.classList.toggle('refused', !!r.refused);
+    el.innerHTML = esc(r.answer).replace(/\n/g,'<br>') + cites;
+  }catch(e){ document.getElementById(id).textContent = 'Error: ' + e.message; }
+};
+function showExcerpt(id, i){
+  const c = (window['_cites_' + id] || [])[i]; if (!c) return;
+  const el = document.getElementById(id);
+  el.querySelectorAll('.excerpt').forEach(x=>x.remove());
+  const d = document.createElement('div'); d.className = 'excerpt';
+  d.textContent = `[${i+1}] ${c.source_file} — ${c.location}\n${c.excerpt}`;
+  el.appendChild(d);
+}
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---------- quiz
+$('#btnQuiz').onclick = async () => {
+  const sel = [...document.querySelectorAll('#qTopics .chip.on')].map(c=>c.dataset.t);
+  $('#btnQuiz').disabled = true;
+  $('#quizStat').innerHTML = '<span class="spin"></span>Generating + verifying questions…';
+  try{
+    const r = await api('/api/quiz', {topics: sel, count: +$('#qCount').value, difficulty: $('#qDiff').value});
+    $('#quizStat').textContent = `✓ ${r.count} verified questions`;
+    $('#quizBox').innerHTML = r.questions.map((q,i) => qCard(q,i)).join('');
+    document.querySelectorAll('.opt').forEach(o => o.onclick = () => {
+      const qid = o.closest('.q').dataset.qid;
+      document.querySelectorAll(`.q[data-qid="${qid}"] .opt`).forEach(x=>x.classList.remove('sel'));
+      o.classList.add('sel');
+    });
+    document.querySelectorAll('.btnSubmit').forEach(b => b.onclick = () => submitAnswer(b));
+  }catch(e){ $('#quizStat').textContent = 'Failed: ' + e.message; }
+  $('#btnQuiz').disabled = false;
+};
+function qCard(q, i){
+  const opts = (q.options||[]).map(o => `<div class="opt">${esc(o)}</div>`).join('');
+  const input = q.type === 'mcq' ? opts :
+    `<textarea placeholder="${q.type==='numerical'?'Your numeric answer':'Your answer'}" class="freeans" rows="2"></textarea>`;
+  return `<div class="card q" data-qid="${q.id}">
+    <div class="meta">Q${i+1} · ${q.type} · ${q.difficulty||''} · topic: ${q.topic||'—'} · source: ${q.source_unit_id||'—'}${q.verified?' · ✓verified':''}</div>
+    <div style="margin-bottom:6px">${esc(q.question)}</div>${input}
+    <div class="row" style="margin-top:10px"><button class="ghost btnSubmit">Submit answer</button></div>
+    <div class="fb" style="display:none"></div></div>`;
+}
+async function submitAnswer(btn){
+  const card = btn.closest('.q'); const qid = card.dataset.qid;
+  const sel = card.querySelector('.opt.sel'); const free = card.querySelector('.freeans');
+  const resp = sel ? sel.textContent : (free ? free.value : '');
+  if (!resp){ toast('Pick or type an answer first'); return; }
+  btn.disabled = true;
+  try{
+    const r = await api('/api/grade', {question_id: qid, response: resp});
+    const fb = card.querySelector('.fb');
+    fb.style.display = 'block';
+    fb.className = 'fb ' + (r.correct ? 'ok' : 'bad');
+    fb.innerHTML = (r.correct ? '✓ Correct' : '✗ Not quite') +
+      ` — model answer: <b>${esc(r.model_answer)}</b><br>${esc(r.explanation)}` +
+      `<div class="mut" style="margin-top:5px">mastery → ${Math.round(r.mastery*100)}% on “${r.topic}”</div>`;
+  }catch(e){ toast('Grading failed: ' + e.message); btn.disabled = false; }
+}
+
+// ---------- dashboard
+async function loadDash(){
+  try{
+    const r = await api('/api/dashboard');
+    const t = r.report.topics;
+    const names = Object.keys(t);
+    if (!names.length){ $('#mastery').innerHTML = '<span class="mut">Answer some quiz questions first.</span>'; return; }
+    $('#mastery').innerHTML = names.map(n => {
+      const p = t[n];
+      const pct = Math.round(p.mastery*100);
+      return `<div class="trow"><div>${n}</div><div class="bar"><i style="width:${pct}%"></i></div><div>${pct}%</div></div>`;
+    }).join('') + (r.report.weak_topics.length ?
+      `<div class="mut" style="margin-top:10px">Weak topics: ${r.report.weak_topics.join(', ')}</div>` : '');
+  }catch(e){}
+}
+$('#btnPlan').onclick = async () => {
+  try{
+    const r = await api('/api/plan', {days: 7});
+    $('#planBox').innerHTML = r.plan.map(d =>
+      `<div class="mut" style="margin:5px 0"><b style="color:var(--tx)">Day ${d.day}</b> — ${d.topics.join(', ')}</div>`).join('');
+  }catch(e){ toast(e.message); }
+};
+
+boot();
+</script>
+</body>
+</html>
