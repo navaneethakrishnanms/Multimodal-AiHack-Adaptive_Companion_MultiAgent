@@ -29,11 +29,39 @@ def _tokens(text: str) -> str:
     return re.sub(r"\s+", " ", text.lower())
 
 
-def min_score() -> float:
+GATE_FILE = Path(__file__).with_name("gate.json")
+
+
+def _gate_value(key: str, env: str, default: float) -> float:
+    """env override > core/gate.json (written by scripts/run_eval.py --write-gate) > default."""
+    if os.environ.get(env):
+        try:
+            return float(os.environ[env])
+        except ValueError:
+            pass
     try:
-        return float(os.environ.get("RETRIEVAL_MIN_SCORE", DEFAULT_MIN_SCORE))
-    except ValueError:
-        return DEFAULT_MIN_SCORE
+        return float(json.loads(GATE_FILE.read_text(encoding="utf-8"))[key])
+    except Exception:
+        return default
+
+
+def min_score() -> float:
+    """Strict gate when no LLM is available; recall-first gate when the LLM can refuse on its own."""
+    if llm.available():
+        return _gate_value("min_score_online", "RETRIEVAL_MIN_SCORE_ONLINE", DEFAULT_MIN_SCORE)
+    return _gate_value("min_score", "RETRIEVAL_MIN_SCORE", DEFAULT_MIN_SCORE)
+
+
+def min_coverage() -> float:
+    return _gate_value("min_coverage", "RETRIEVAL_MIN_COVERAGE", 0.0)
+
+
+def stem(word: str) -> str:
+    """Very light suffix stripping so 'overfit' matches 'overfitting' and 'sets' matches 'set'."""
+    for suf in ("ing", "ation", "ions", "ion", "ed", "es", "s"):
+        if word.endswith(suf) and len(word) - len(suf) >= 4:
+            return word[: -len(suf)]
+    return word
 
 
 class Retriever:
@@ -41,9 +69,11 @@ class Retriever:
         self.kb = kb
         self._vec = None
         self._matrix = None
+        self._vocab = None
         self._rebuild()
 
     def _rebuild(self) -> None:
+        self._vocab = None
         texts = [_tokens(u.text) for u in self.kb.units]
         if not texts:
             self._vec, self._matrix = None, None
@@ -67,9 +97,24 @@ class Retriever:
         order = np.argsort(-sims)[:k]
         return [(self.kb.units[i], float(sims[i])) for i in order if sims[i] > 0.01]
 
-    def covered(self, hits: list[tuple[Unit, float]], gate: float | None = None) -> bool:
-        """Does the best hit clear the refusal gate?"""
-        return bool(hits) and hits[0][1] >= (min_score() if gate is None else gate)
+    def vocab(self) -> set[str]:
+        if getattr(self, "_vocab", None) is None:
+            self._vocab = {stem(w) for u in self.kb.units for w in offline.content_words(u.text)}
+        return self._vocab
+
+    def coverage(self, query: str) -> float:
+        """Share of the query's content words (stemmed) that occur anywhere in the course material."""
+        words = {stem(w) for w in offline.content_words(query)}
+        return len(words & self.vocab()) / len(words) if words else 0.0
+
+    def covered(self, hits: list[tuple[Unit, float]], query: str | None = None,
+                gate: float | None = None, cov_gate: float | None = None) -> bool:
+        """Refusal gate: the best passage must be similar enough AND the query's own terms must exist in the course."""
+        if not hits or hits[0][1] < (min_score() if gate is None else gate):
+            return False
+        if query is not None and self.coverage(query) < (min_coverage() if cov_gate is None else cov_gate):
+            return False
+        return True
 
     def rerank(self, query: str, hits: list[tuple[Unit, float]], top: int = 4) -> list[tuple[Unit, float]]:
         """Optional LLM re-rank of candidates (cheap, one call). Falls back on error."""

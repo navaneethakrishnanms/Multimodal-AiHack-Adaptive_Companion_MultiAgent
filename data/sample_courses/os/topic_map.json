@@ -1,0 +1,17 @@
+{
+  "course": "Operating Systems notes (second sample course)",
+  "note": "Curated concept map for the second sample course. Source notes come from the LearnFlow AI project's sample_notes folder (credited in README).",
+  "source_files": ["os_notes.txt"],
+  "topics": [
+    {"name": "Processes and PCB", "subtopics": ["process state"], "key_concepts": ["process", "process control block", "PCB", "program counter", "CPU registers", "instance of a program in execution"], "prerequisites": []},
+    {"name": "CPU Scheduling", "subtopics": ["FCFS", "SJF", "Round Robin"], "key_concepts": ["CPU scheduling", "first-come first-served", "convoy effect", "shortest job first", "round robin", "time quantum", "preemptive"], "prerequisites": ["Processes and PCB"]},
+    {"name": "Race Conditions", "subtopics": ["shared memory"], "key_concepts": ["race conditions", "threads", "shared memory", "synchronization", "concurrency"], "prerequisites": ["Processes and PCB"]},
+    {"name": "Critical Section Problem", "subtopics": ["three conditions"], "key_concepts": ["critical section", "mutual exclusion", "progress", "bounded waiting"], "prerequisites": ["Race Conditions"]},
+    {"name": "Semaphores", "subtopics": ["wait and signal"], "key_concepts": ["semaphore", "wait", "signal", "atomic operations", "counter", "blocked process"], "prerequisites": ["Critical Section Problem"]},
+    {"name": "Deadlock", "subtopics": ["Coffman conditions"], "key_concepts": ["deadlock", "Coffman conditions", "hold and wait", "no preemption", "circular wait", "non-shareable resource"], "prerequisites": ["Semaphores"]},
+    {"name": "Virtual Memory and Paging", "subtopics": ["frames and pages"], "key_concepts": ["virtual memory", "paging", "frames", "pages", "physical memory", "logical memory"], "prerequisites": ["Processes and PCB"]},
+    {"name": "Page Faults", "subtopics": ["fault handling"], "key_concepts": ["page fault", "page table", "swap disk", "kernel mode", "trap", "restarts the instruction"], "prerequisites": ["Virtual Memory and Paging"]},
+    {"name": "Page Replacement Algorithms", "subtopics": ["FIFO", "OPT", "LRU"], "key_concepts": ["page replacement", "FIFO", "Belady's anomaly", "optimal", "least recently used", "reference bits"], "prerequisites": ["Page Faults"]},
+    {"name": "Thrashing", "subtopics": ["excessive paging"], "key_concepts": ["thrashing", "constantly paging", "more time paging than executing"], "prerequisites": ["Page Replacement Algorithms"]}
+  ]
+}

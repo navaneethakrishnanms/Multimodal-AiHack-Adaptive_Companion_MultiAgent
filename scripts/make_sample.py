@@ -4,7 +4,7 @@ from pathlib import Path
 from pptx import Presentation
 from pptx.util import Inches, Pt
 
-OUT = Path(__file__).parent.parent / "data" / "sample_course"
+OUT = Path(__file__).parent.parent / "data" / "sample_courses" / "ml"
 
 SLIDES = [
     ("Introduction to Machine Learning", "Lecture 1 — what learning from data means", [

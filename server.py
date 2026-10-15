@@ -34,7 +34,7 @@ app = FastAPI(title="Study Companion", version="2.0")
 course = Course(DATA)
 students = Students(DATA / "students")
 keystore = KeyStore(DATA)
-SAMPLE = ROOT / "data" / "sample_course"  # bundled course (read-only)
+SAMPLE = ROOT / "data" / "sample_courses" / "ml"  # bundled course (read-only)
 
 
 # ------------------------------------------------------------- helpers

@@ -8,7 +8,7 @@ import pytest
 
 ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(ROOT))
-SAMPLE = ROOT / "data" / "sample_course"
+SAMPLE = ROOT / "data" / "sample_courses" / "ml"
 
 
 @pytest.fixture()

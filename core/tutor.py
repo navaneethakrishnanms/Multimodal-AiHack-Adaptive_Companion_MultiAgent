@@ -80,7 +80,7 @@ def answer(
     language: str = "en",
 ) -> dict:
     hits = retriever.search(question, k=k)
-    covered = retriever.covered(hits)
+    covered = retriever.covered(hits, question)
     if not covered:
         return _refusal(question, [], allow_outside)
 

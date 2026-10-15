@@ -1,0 +1,6 @@
+{
+ "min_score": 0.18,
+ "min_coverage": 0.0,
+ "min_score_online": 0.15,
+ "chosen_on": "dev split: best balanced accuracy over (min_score, min_coverage); middle of the tied optimum"
+}

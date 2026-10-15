@@ -6,7 +6,7 @@ Measured on 2026-10-15 in the `torch_gpu` conda env, sample course (3 files), **
 
 | Item | Result |
 |---|---|
-| Ingestion of `data/sample_course/*` | 13 units (5 notes paragraphs, 5 slides, 3 transcript windows) — works |
+| Ingestion of `data/sample_courses/ml/*` | 13 units (5 notes paragraphs, 5 slides, 3 transcript windows) — works |
 | Retrieval, 10 labelled questions (`scripts/run_eval.py` code path) | hit rate@6 = 1.0, MRR = 0.717 |
 | Unit tags / topic map | none — `/api/analyze` returns `{"topics": []}` silently without an LLM |
 

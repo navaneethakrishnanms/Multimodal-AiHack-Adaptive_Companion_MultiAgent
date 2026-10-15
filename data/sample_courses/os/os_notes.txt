@@ -1,0 +1,36 @@
+# Operating Systems: Concurrency, Virtual Memory, and Scheduling Notes
+
+## Section 1: Process Management & CPU Scheduling
+A Process is an instance of a program in execution. The operating system uses a Process Control Block (PCB) to track process state, program counter, CPU registers, and memory boundaries.
+CPU Scheduling algorithms determine which ready process is allocated the CPU:
+- First-Come, First-Served (FCFS): Simple non-preemptive algorithm subject to the convoy effect.
+- Shortest Job First (SJF): Provably optimal minimum average waiting time, but requires predicting future CPU burst durations.
+- Round Robin (RR): Preemptive time-sliced scheduling designed specifically for time-sharing systems where each process receives a quantum q.
+
+## Section 2: Concurrency & Synchronization
+Concurrency introduces race conditions when multiple threads concurrently read and write shared memory locations without proper synchronization.
+The Critical Section Problem requires three conditions:
+1. Mutual Exclusion: If process P is executing in its critical section, no other process can execute in its critical section.
+2. Progress: If no process is in its critical section and some wish to enter, selection cannot be postponed indefinitely.
+3. Bounded Waiting: A bound must exist on the number of times other processes enter critical sections before a requesting process enters.
+
+Semaphores are synchronization tools providing two atomic operations:
+- wait() or P(): Decrements semaphore counter; blocks if counter < 0.
+- signal() or V(): Increments semaphore counter; wakes up a blocked process.
+
+Deadlock is a state where every process in a set is waiting for an event that only another process in the set can cause.
+The Four Coffman Deadlock Conditions:
+1. Mutual Exclusion: At least one non-shareable resource.
+2. Hold and Wait: A process holds resources while waiting for additional resources.
+3. No Preemption: Resources cannot be forcibly seized from holding processes.
+4. Circular Wait: A closed chain of processes exists where each process holds resources needed by the next.
+
+## Section 3: Virtual Memory & Page Replacement
+Virtual Memory decouples physical memory size from user logical memory addressing. Paging divides physical memory into fixed-size frames and logical memory into pages.
+A Page Fault occurs when a program accesses a valid address whose page is not currently resident in physical RAM. The OS traps to kernel mode, fetches the page from swap disk space, updates the page table, and restarts the instruction.
+
+Page Replacement Algorithms:
+- FIFO (First-In, First-Out): Replaces the oldest page in memory; susceptible to Belady's Anomaly where allocating more page frames increases page fault rate.
+- Optimal (OPT): Replaces the page that will not be used for the longest period into the future (theoretical lower bound benchmark).
+- Least Recently Used (LRU): Replaces the page that has not been referenced for the longest time, approximating optimal behavior using hardware reference bits.
+- Thrashing: Occurs when a computer's virtual memory subsystem is constantly in a state of paging, rapidly exchanging data in memory for data on disk, where processes spend more time paging than executing instructions.

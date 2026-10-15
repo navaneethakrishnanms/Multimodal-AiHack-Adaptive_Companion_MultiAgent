@@ -79,7 +79,11 @@ class Course:
     def analyze(self, prefer_seed: bool = False) -> dict:
         """Topic map: curated map for the bundled sample course, LLM/heuristic otherwise."""
         with LOCK:
-            seed = load_seed_topics(self.kb, ROOT / "data" / "sample_course" / "topic_map.json")
+            seed = next(
+                (s for m in sorted((ROOT / "data").glob("sample_courses/*/topic_map.json"))
+                 if (s := load_seed_topics(self.kb, m))),
+                None,
+            )
             from . import llm
 
             if seed and (prefer_seed or not llm.available()):

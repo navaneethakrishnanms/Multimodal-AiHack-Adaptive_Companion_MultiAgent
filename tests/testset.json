@@ -1,17 +1,780 @@
-[
-  {"question": "What is the definition of machine learning in terms of task, experience and performance?", "source_file": "ml_notes.md", "location": "para 1"},
-  {"question": "What is the difference between supervised and unsupervised learning?", "source_file": "ml_notes.md", "location": "para 2"},
-  {"question": "What does reinforcement learning optimize?", "source_file": "ml_notes.md", "location": "para 2"},
-  {"question": "What is the closed-form solution for linear regression with MSE?", "source_file": "ml_notes.md", "location": "para 3"},
-  {"question": "What is the gradient descent update rule and what is alpha?", "source_file": "ml_notes.md", "location": "para 3"},
-  {"question": "How does L2 regularization differ from L1 regularization?", "source_file": "ml_notes.md", "location": "para 5"},
-  {"question": "What does the normal equations cost and why prefer gradient descent?", "source_file": "ml_notes.md", "location": "para 3"},
-  {"question": "Why does stochastic gradient descent make cheaper steps?", "source_file": "lecture_transcript.vtt", "location": "00:02:40"},
-  {"question": "What are the three paradigms of machine learning?", "source_file": "lecture_slides.pptx", "location": "slide 1"},
-  {"question": "What happens if the learning rate is too large?", "source_file": "lecture_slides.pptx", "location": "slide 4"},
-
-  {"question": "What is the capital of France?", "off_material": true},
-  {"question": "How do transformer models use self-attention?", "off_material": true},
-  {"question": "What is the recipe for chocolate cake?", "off_material": true},
-  {"question": "Who won the 2018 FIFA World Cup?", "off_material": true}
-]
+{
+  "description": "Team-built test set. 'relevant' lists every unit in the course that contains the answer (ground truth for context precision/recall). 'split' is used only to calibrate the refusal gate (dev) vs report it (test). Cases may be extended by scripts that add figure/video cases.",
+  "cases": [
+    {
+      "id": "ml01",
+      "course": "ml",
+      "split": "dev",
+      "question": "What is the definition of machine learning in terms of task, experience and performance?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 1"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 1"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml02",
+      "course": "ml",
+      "split": "test",
+      "question": "What is supervised learning and what kind of data does it use?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 1"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 2"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml03",
+      "course": "ml",
+      "split": "dev",
+      "question": "What does unsupervised learning try to discover?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 2"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 2"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml04",
+      "course": "ml",
+      "split": "test",
+      "question": "What does reinforcement learning optimize?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 2"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 2"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml05",
+      "course": "ml",
+      "split": "dev",
+      "question": "What are examples of unsupervised learning applications?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 2"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml06",
+      "course": "ml",
+      "split": "test",
+      "question": "How does linear regression make a prediction and what are w and b?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 3"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 3"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml07",
+      "course": "ml",
+      "split": "dev",
+      "question": "What is the mean squared error loss?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 3"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 3"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml08",
+      "course": "ml",
+      "split": "test",
+      "question": "What is the closed-form solution for linear regression with MSE?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 3"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 3"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml09",
+      "course": "ml",
+      "split": "dev",
+      "question": "Why is gradient descent preferred over the normal equations when there are many features?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 4"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 3"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml10",
+      "course": "ml",
+      "split": "test",
+      "question": "What is the computational cost of inverting X transpose X?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 4"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 3"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml11",
+      "course": "ml",
+      "split": "dev",
+      "question": "What is the gradient descent update rule and what is alpha?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 5"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml12",
+      "course": "ml",
+      "split": "test",
+      "question": "What happens if the learning rate is too large?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 5"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml13",
+      "course": "ml",
+      "split": "dev",
+      "question": "What happens when the learning rate is too small?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 5"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml14",
+      "course": "ml",
+      "split": "test",
+      "question": "What is the gradient of the MSE loss for linear regression?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 5"
+        ]
+      ]
+    },
+    {
+      "id": "ml15",
+      "course": "ml",
+      "split": "dev",
+      "question": "Why does stochastic gradient descent make cheaper steps?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 6"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml16",
+      "course": "ml",
+      "split": "test",
+      "question": "What is the downside of using a mini-batch to approximate the gradient?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 6"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml17",
+      "course": "ml",
+      "split": "dev",
+      "question": "When does a model overfit?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 7"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 5"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml18",
+      "course": "ml",
+      "split": "test",
+      "question": "When is overfitting most likely to happen?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 7"
+        ]
+      ]
+    },
+    {
+      "id": "ml19",
+      "course": "ml",
+      "split": "dev",
+      "question": "How does L2 regularization differ from L1 regularization?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 7"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 5"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml20",
+      "course": "ml",
+      "split": "test",
+      "question": "Which regularization produces sparse weights and performs feature selection?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 7"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 5"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml21",
+      "course": "ml",
+      "split": "dev",
+      "question": "On which dataset should the regularization strength lambda be tuned?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 8"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 5"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml22",
+      "course": "ml",
+      "split": "test",
+      "question": "What is the purpose of the training, validation and test sets?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 8"
+        ]
+      ]
+    },
+    {
+      "id": "ml23",
+      "course": "ml",
+      "split": "dev",
+      "question": "Give examples of supervised learning tasks.",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 1"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 2"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml24",
+      "course": "ml",
+      "split": "test",
+      "question": "What is a policy in reinforcement learning?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 2"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:00:00"
+        ]
+      ]
+    },
+    {
+      "id": "ml25",
+      "course": "ml",
+      "split": "dev",
+      "question": "What is the numerical problem with inverting the matrix in the normal equations?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "ml26",
+      "course": "ml",
+      "split": "test",
+      "question": "What does a good learning rate do to the loss curve?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 5"
+        ]
+      ]
+    },
+    {
+      "id": "os01",
+      "course": "os",
+      "split": "dev",
+      "question": "What does the process control block store?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 1"
+        ]
+      ]
+    },
+    {
+      "id": "os02",
+      "course": "os",
+      "split": "test",
+      "question": "What is the convoy effect in FCFS scheduling?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 1"
+        ]
+      ]
+    },
+    {
+      "id": "os03",
+      "course": "os",
+      "split": "dev",
+      "question": "What are the three conditions of the critical section problem?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 2"
+        ]
+      ]
+    },
+    {
+      "id": "os04",
+      "course": "os",
+      "split": "test",
+      "question": "What do the semaphore operations wait and signal do?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 3"
+        ]
+      ]
+    },
+    {
+      "id": "os05",
+      "course": "os",
+      "split": "dev",
+      "question": "What are the four Coffman conditions for deadlock?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 4"
+        ]
+      ]
+    },
+    {
+      "id": "os06",
+      "course": "os",
+      "split": "test",
+      "question": "What happens when a page fault occurs?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 5"
+        ]
+      ]
+    },
+    {
+      "id": "os07",
+      "course": "os",
+      "split": "dev",
+      "question": "What is Belady's anomaly?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 6"
+        ]
+      ]
+    },
+    {
+      "id": "os08",
+      "course": "os",
+      "split": "test",
+      "question": "What is thrashing in a virtual memory system?",
+      "relevant": [
+        [
+          "os_notes.txt",
+          "para 6"
+        ]
+      ]
+    },
+    {
+      "id": "off01",
+      "course": "ml",
+      "split": "dev",
+      "off_material": true,
+      "question": "What is the capital of France?"
+    },
+    {
+      "id": "off02",
+      "course": "ml",
+      "split": "test",
+      "off_material": true,
+      "question": "What is the recipe for chocolate cake?"
+    },
+    {
+      "id": "off03",
+      "course": "ml",
+      "split": "dev",
+      "off_material": true,
+      "question": "Who won the 2018 FIFA World Cup?"
+    },
+    {
+      "id": "off04",
+      "course": "ml",
+      "split": "test",
+      "off_material": true,
+      "question": "How do transformer models use self-attention?"
+    },
+    {
+      "id": "off05",
+      "course": "ml",
+      "split": "dev",
+      "off_material": true,
+      "question": "How does backpropagation compute gradients in a deep neural network?"
+    },
+    {
+      "id": "off06",
+      "course": "ml",
+      "split": "test",
+      "off_material": true,
+      "question": "What is a convolutional neural network and what are its filters?"
+    },
+    {
+      "id": "off07",
+      "course": "ml",
+      "split": "dev",
+      "off_material": true,
+      "question": "How does a decision tree choose where to split?"
+    },
+    {
+      "id": "off08",
+      "course": "ml",
+      "split": "test",
+      "off_material": true,
+      "question": "What is the kernel trick in support vector machines?"
+    },
+    {
+      "id": "off09",
+      "course": "os",
+      "split": "dev",
+      "off_material": true,
+      "question": "How does the TCP three-way handshake work?"
+    },
+    {
+      "id": "off10",
+      "course": "os",
+      "split": "test",
+      "off_material": true,
+      "question": "What is the time complexity of quicksort in the worst case?"
+    },
+    {
+      "id": "off11",
+      "course": "os",
+      "split": "dev",
+      "off_material": true,
+      "question": "Who was the first emperor of Rome?"
+    },
+    {
+      "id": "off12",
+      "course": "os",
+      "split": "test",
+      "off_material": true,
+      "question": "How do I train a random forest classifier?"
+    },
+    {
+      "id": "ml27",
+      "course": "ml",
+      "split": "dev",
+      "question": "How can I stop my model from memorizing the training set?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 7"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 5"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml28",
+      "course": "ml",
+      "split": "test",
+      "question": "Why do we need a held-out set for choosing hyperparameters?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 8"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 5"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml29",
+      "course": "ml",
+      "split": "dev",
+      "question": "What makes each SGD update inexpensive?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 6"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:02:40"
+        ]
+      ]
+    },
+    {
+      "id": "ml30",
+      "course": "ml",
+      "split": "test",
+      "question": "How do I pick a step size so that training does not blow up?",
+      "relevant": [
+        [
+          "ml_notes.md",
+          "para 5"
+        ],
+        [
+          "lecture_slides.pptx",
+          "slide 4"
+        ],
+        [
+          "lecture_transcript.vtt",
+          "00:01:15"
+        ]
+      ]
+    },
+    {
+      "id": "off13",
+      "course": "ml",
+      "split": "dev",
+      "off_material": true,
+      "question": "How does k-means clustering assign points to clusters?"
+    },
+    {
+      "id": "off14",
+      "course": "ml",
+      "split": "test",
+      "off_material": true,
+      "question": "How does the Adam optimizer adapt the learning rate for each parameter?"
+    },
+    {
+      "id": "off15",
+      "course": "ml",
+      "split": "dev",
+      "off_material": true,
+      "question": "Why is cross-entropy used as the loss function for classification?"
+    },
+    {
+      "id": "off16",
+      "course": "ml",
+      "split": "test",
+      "off_material": true,
+      "question": "How does dropout regularize a deep network?"
+    },
+    {
+      "id": "off17",
+      "course": "os",
+      "split": "dev",
+      "off_material": true,
+      "question": "How does the Linux CFS scheduler pick the next process?"
+    },
+    {
+      "id": "off18",
+      "course": "os",
+      "split": "test",
+      "off_material": true,
+      "question": "What is the difference between a mutex and a spinlock?"
+    }
+  ],
+  "history": "v1 had 12 off-material queries; its dev split contained only trivially unrelated queries (score 0), so the first calibration gave 50% test refusal. v2 adds 4 paraphrased in-material and 6 hard off-material queries (shared vocabulary), split dev/test by alternating file order. Existing cases were not moved."
+}
