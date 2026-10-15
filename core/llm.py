@@ -5,12 +5,16 @@ Configure via environment variables (see config.example.env):
   LLM_API_KEY   your key
   LLM_MODEL     e.g. gpt-4o-mini / deepseek-v4.1-flash
   LLM_EXTRA_HEADERS  optional JSON dict of extra headers (e.g. routing headers)
+Optional second models (all fall back to LLM_MODEL when unset):
+  VERIFY_MODEL  independent model that re-solves generated quiz questions (cross-model check)
+  VISION_MODEL  image-capable model used to describe figures and diagrams
 """
 from __future__ import annotations
 
 import json
 import os
 import time
+from pathlib import Path
 import urllib.request
 import urllib.error
 
@@ -19,10 +23,79 @@ class LLMError(RuntimeError):
     pass
 
 
-def _cfg() -> tuple[str, str, str, dict]:
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def load_env(path: Path | None = None) -> None:
+    """Load KEY=VALUE pairs from .env into os.environ (existing variables win). Never prints values."""
+    envf = path or ROOT / ".env"
+    if os.environ.get("STUDY_NO_ENV") or not envf.exists():
+        return
+    for line in envf.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, _, v = line.partition("=")
+        os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+
+
+_dead_until = 0.0
+_dead_reason = ""
+HARD_FAIL_COOLDOWN = 120.0
+
+
+def _trip(reason: str) -> None:
+    """Circuit breaker: after a credential/quota failure stop calling for a while so every
+    request degrades to the offline fallback instantly instead of retrying a dead endpoint."""
+    global _dead_until, _dead_reason
+    _dead_until, _dead_reason = time.time() + HARD_FAIL_COOLDOWN, reason
+
+
+def reset() -> None:
+    global _dead_until, _dead_reason
+    _dead_until, _dead_reason = 0.0, ""
+
+
+def configured() -> bool:
+    return bool(os.environ.get("LLM_BASE_URL") and os.environ.get("LLM_MODEL"))
+
+
+def status() -> dict:
+    """Never includes the key; the UI uses this to show online/offline mode."""
+    healthy = configured() and time.time() >= _dead_until
+    return {
+        "configured": configured(),
+        "healthy": healthy,
+        "reason": "" if healthy else (_dead_reason or "not configured"),
+        "model": os.environ.get("LLM_MODEL", ""),
+        "verify_model": os.environ.get("VERIFY_MODEL", ""),
+        "vision_model": os.environ.get("VISION_MODEL", ""),
+    }
+
+
+def available() -> bool:
+    """True when a text model is configured and has not just failed hard (bad key / no credits)."""
+    return configured() and time.time() >= _dead_until
+
+
+def vision_available() -> bool:
+    return available() and bool(os.environ.get("VISION_MODEL") or os.environ.get("LLM_MODEL"))
+
+
+def image_part(path: Path) -> dict:
+    """OpenAI-style image content part from a local file (data URL)."""
+    import base64
+    import mimetypes
+
+    mime = mimetypes.guess_type(str(path))[0] or "image/png"
+    b64 = base64.b64encode(Path(path).read_bytes()).decode("ascii")
+    return {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{b64}"}}
+
+
+def _cfg(model_override: str | None = None) -> tuple[str, str, str, dict]:
     base = os.environ.get("LLM_BASE_URL", "").rstrip("/")
     key = os.environ.get("LLM_API_KEY", "")
-    model = os.environ.get("LLM_MODEL", "")
+    model = model_override or os.environ.get("LLM_MODEL", "")
     extra = {}
     raw = os.environ.get("LLM_EXTRA_HEADERS", "")
     if raw:
@@ -44,9 +117,10 @@ def chat(
     max_tokens: int = 1500,
     retries: int = 3,
     json_mode: bool = False,
+    model: str | None = None,
 ) -> str:
-    """Single chat completion. Returns the assistant text."""
-    base, key, model, extra = _cfg()
+    """Single chat completion. Returns the assistant text. `model` overrides LLM_MODEL for this call."""
+    base, key, model, extra = _cfg(model)
     payload: dict = {
         "model": model,
         "messages": messages,
@@ -95,6 +169,12 @@ def chat(
                 payload.pop("response_format", None)
                 last_err = e
                 continue
+            if e.code in (401, 403):  # bad/missing key: retrying cannot help
+                _trip(f"credentials rejected (HTTP {e.code})")
+                raise LLMError(f"LLM rejected the credentials (HTTP {e.code})") from None
+            if e.code == 429 and any(k in body for k in ("insufficient_quota", "credit_balance", "billing")):
+                _trip("no API credits left (HTTP 429)")
+                raise LLMError("LLM account has no credits (HTTP 429)") from None
             last_err = e
             time.sleep(1.5 * (attempt + 1))
         except Exception as e:  # noqa: BLE001 — surface a clean error after retries
@@ -109,6 +189,7 @@ def chat_json(
     temperature: float = 0.1,
     max_tokens: int = 2500,
     retries: int = 3,
+    model: str | None = None,
 ) -> dict | list:
     """Chat completion parsed as JSON (tolerant: strips code fences)."""
     text = chat(
@@ -117,6 +198,7 @@ def chat_json(
         max_tokens=max_tokens,
         retries=retries,
         json_mode=True,
+        model=model,
     )
     text = text.strip()
     if text.startswith("```"):

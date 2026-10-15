@@ -1,0 +1,28 @@
+{
+  "course": "Introduction to Machine Learning (sample course)",
+  "note": "Curated concept map for the bundled sample course. Used for offline mode, the Demo student and the simulated-student evaluation; units are tagged to topics by TF-IDF similarity at load time.",
+  "source_files": [
+    "ml_notes.md",
+    "lecture_slides.pptx",
+    "lecture_transcript.vtt",
+    "model_selection_chapter.pdf",
+    "lecture2_model_selection.mp4"
+  ],
+  "topics": [
+    {"name": "Learning from Experience", "subtopics": ["task, experience, performance"], "key_concepts": ["machine learning", "experience E", "task T", "performance measure P", "algorithms improve performance"], "prerequisites": []},
+    {"name": "Supervised Learning", "subtopics": ["classification", "regression"], "key_concepts": ["supervised", "labelled examples", "input-output pairs", "spam classification", "house price prediction", "generalizes to unseen data"], "prerequisites": ["Learning from Experience"]},
+    {"name": "Unsupervised Learning", "subtopics": ["clustering"], "key_concepts": ["unsupervised", "unlabelled data", "clusters", "dimensionality reduction", "anomalous points", "customer segmentation", "density estimation"], "prerequisites": ["Learning from Experience"]},
+    {"name": "Reinforcement Learning", "subtopics": ["agents and rewards"], "key_concepts": ["reinforcement", "agent", "environment", "states", "actions", "rewards", "policy", "cumulative reward"], "prerequisites": ["Learning from Experience"]},
+    {"name": "Linear Regression", "subtopics": ["the linear model"], "key_concepts": ["linear regression", "continuous target", "weight vector", "bias term", "prediction y_hat", "fitting a line"], "prerequisites": ["Supervised Learning"]},
+    {"name": "Mean Squared Error", "subtopics": ["loss functions"], "key_concepts": ["mean squared error", "MSE", "loss function", "squared difference", "minimize loss"], "prerequisites": ["Linear Regression"]},
+    {"name": "Normal Equations", "subtopics": ["closed-form solution"], "key_concepts": ["normal equations", "closed-form solution", "inverting X^T X", "O(d^3)", "numerically unstable", "many features"], "prerequisites": ["Mean Squared Error"]},
+    {"name": "Gradient Descent", "subtopics": ["iterative optimization"], "key_concepts": ["gradient descent", "negative gradient", "iterative optimization", "initial guess", "theta update", "gradient of the MSE loss"], "prerequisites": ["Mean Squared Error"]},
+    {"name": "Learning Rate", "subtopics": ["step size"], "key_concepts": ["learning rate", "alpha", "too small slow convergence", "too large overshoot diverge", "hyperparameter", "loss decreases smoothly"], "prerequisites": ["Gradient Descent"]},
+    {"name": "Stochastic Gradient Descent", "subtopics": ["mini-batches"], "key_concepts": ["stochastic gradient descent", "SGD", "mini-batch", "random subset", "cheaper steps", "noisier loss curve"], "prerequisites": ["Gradient Descent"]},
+    {"name": "Overfitting", "subtopics": ["generalization"], "key_concepts": ["overfitting", "overfits", "fits training data very well", "generalizes poorly", "model complexity relative to data"], "prerequisites": ["Supervised Learning", "Linear Regression"]},
+    {"name": "Regularization", "subtopics": ["L1 and L2"], "key_concepts": ["regularization", "penalty on complexity", "L2 ridge", "L1 lasso", "sparse solutions", "feature selection", "lambda strength"], "prerequisites": ["Overfitting", "Mean Squared Error"]},
+    {"name": "Train/Validation/Test Splits", "subtopics": ["data splits"], "key_concepts": ["training set", "validation set", "test set", "tune hyperparameters", "unbiased estimate of generalization", "never tune on the test set"], "prerequisites": ["Overfitting"]},
+    {"name": "Bias-Variance Tradeoff", "subtopics": ["underfitting vs overfitting"], "key_concepts": ["bias", "variance", "underfitting", "model complexity", "tradeoff", "validation error curve", "training error keeps falling"], "prerequisites": ["Overfitting"]},
+    {"name": "Cross-Validation", "subtopics": ["k-fold"], "key_concepts": ["cross-validation", "k-fold", "folds", "held-out fold", "average validation score", "limited data"], "prerequisites": ["Train/Validation/Test Splits"]}
+  ]
+}

@@ -27,6 +27,10 @@ class Unit:
     page: int | None = None
     image_count: int = 0
     topics: list[str] | None = None
+    kind: str = "text"  # text | figure
+    figure_path: str | None = None  # data/figures/<file> for figure units
+    start_sec: float | None = None  # video/audio/transcript start, for seeking
+    section: str | None = None  # nearest heading (markdown notes)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -39,7 +43,7 @@ def _uid(file: str, loc: str, idx: int) -> str:
 
 def _chunk_paragraphs(text: str, max_chars: int = 900) -> list[str]:
     """Split text into paragraph-ish chunks under max_chars."""
-    paras = [p.strip() for p in re.split(r"\n\s*\n|\n(?=[A-Z0-9])", text) if p.strip()]
+    paras = [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
     chunks, buf = [], ""
     for p in paras:
         if len(buf) + len(p) + 2 <= max_chars:
@@ -124,20 +128,35 @@ def ingest_pptx(path: Path) -> list[Unit]:
 
 
 def ingest_text(path: Path) -> list[Unit]:
+    """Notes / markdown: split at headings first so a chunk never straddles two concepts."""
     text = path.read_text(encoding="utf-8", errors="replace")
-    units = []
-    for ci, chunk in enumerate(_chunk_paragraphs(text)):
-        if len(chunk) < 40:
-            continue
-        units.append(
-            Unit(
-                id=_uid(path.name, "text", ci),
-                text=chunk,
-                source_type="text",
-                source_file=path.name,
-                location=f"para {ci + 1}",
+    sections: list[tuple[str | None, str]] = []
+    heading, buf = None, []
+    for line in text.splitlines():
+        if re.match(r"^#{1,4}\s", line):
+            if "".join(buf).strip():
+                sections.append((heading, "\n".join(buf)))
+            heading, buf = line.lstrip("# ").strip(), [line]
+        else:
+            buf.append(line)
+    if "".join(buf).strip():
+        sections.append((heading, "\n".join(buf)))
+    units, ci = [], 0
+    for heading, body in sections:
+        for chunk in _chunk_paragraphs(body, max_chars=700):
+            if len(chunk) < 40 or (heading and chunk.strip().lstrip("# ").strip() == heading):
+                continue
+            ci += 1
+            units.append(
+                Unit(
+                    id=_uid(path.name, "text", ci),
+                    text=chunk,
+                    source_type="text",
+                    source_file=path.name,
+                    location=f"para {ci}",
+                    section=heading,
+                )
             )
-        )
     return units
 
 
@@ -245,7 +264,8 @@ class KnowledgeBase:
 
     @classmethod
     def from_json(cls, raw: str) -> "KnowledgeBase":
-        return cls([Unit(**d) for d in json.loads(raw)])
+        fields = set(Unit.__dataclass_fields__)
+        return cls([Unit(**{k: v for k, v in d.items() if k in fields}) for d in json.loads(raw)])
 
     def save(self, path: Path) -> None:
         path.write_text(self.to_json(), encoding="utf-8")
