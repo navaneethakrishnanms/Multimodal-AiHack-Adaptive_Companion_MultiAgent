@@ -563,7 +563,7 @@ def demo_student() -> dict:
     course.analyze(prefer_seed=True)
     st = students.get("demo")
     st.reset()
-    st.meta.update({"name": "Demo student", "exam_days": 7, "demo_gap": "Overfitting"})
+    st.meta.update({"name": "Alex Chen (Adaptive Study Track)", "exam_days": 7, "demo_gap": "Overfitting"})
     st.save_meta()
     solid = {
         "Learning from Experience": 3, "Supervised Learning": 3, "Linear Regression": 3,
@@ -575,7 +575,7 @@ def demo_student() -> dict:
     st.learner.update("Regularization", False, "mcq", source="seed")
     return {
         "student": {"id": st.id, **st.meta},
-        "story": "Strong on the basics, but just missed a Regularization question. The real gap is hidden: Overfitting was never tested.",
+        "story": "Learner has solid fundamentals across regression and optimization, but struggles with Regularization due to an unaddressed prerequisite gap in Overfitting.",
         "start_topic": "Regularization",
         "mastery": st.learner.mastery(),
         "seeded_at": int(_t.time()),
