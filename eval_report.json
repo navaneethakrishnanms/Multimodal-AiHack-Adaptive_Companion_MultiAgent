@@ -1,12 +1,12 @@
 {
   "framework": "native re-implementation of RAGAS metric definitions (RAGAS itself not used; see core/evaluate.py docstring)",
   "llm": {
-    "configured": false,
+    "configured": true,
     "healthy": false,
-    "reason": "not configured",
-    "model": "",
+    "reason": "no API credits left (HTTP 429)",
+    "model": "gpt-4o-mini",
     "verify_model": "",
-    "vision_model": ""
+    "vision_model": "gpt-4o-mini"
   },
   "testset": {
     "in_material": 47,
@@ -56,7 +56,7 @@
   },
   "generation": {
     "mode": "offline",
-    "model": null,
+    "model": "gpt-4o-mini",
     "refusal_end_to_end": {
       "cases": 18,
       "refused": 16,
@@ -72,11 +72,11 @@
     },
     "faithfulness": {
       "status": "skipped",
-      "reason": "needs a working LLM (not configured)"
+      "reason": "needs a working LLM (no API credits left (HTTP 429))"
     },
     "answer_relevancy": {
       "status": "skipped",
-      "reason": "needs a working LLM (not configured)"
+      "reason": "needs a working LLM (no API credits left (HTTP 429))"
     }
   },
   "assessment": {
@@ -838,6 +838,6 @@
       }
     }
   },
-  "generated_at": "2026-10-15 04:41 UTC",
-  "elapsed_sec": 1.9
+  "generated_at": "2026-10-15 05:20 UTC",
+  "elapsed_sec": 29.0
 }

@@ -365,6 +365,7 @@ $('#file').onchange = e => { upload(e.target.files); e.target.value = '' };
 const stageText = n => { const x = n.toLowerCase().split('.').pop(); return ({ pdf: 'Reading pages and extracting figures…', pptx: 'Reading slides and figures…', mp4: 'Transcribing speech with Whisper…', mp3: 'Transcribing speech with Whisper…', wav: 'Transcribing speech with Whisper…', m4a: 'Transcribing speech with Whisper…', mkv: 'Transcribing speech with Whisper…', mov: 'Transcribing speech with Whisper…', webm: 'Transcribing speech with Whisper…', vtt: 'Parsing timestamped transcript…', srt: 'Parsing timestamped transcript…' })[x] || 'Reading text…' };
 
 async function upload(files) {
+  files = [...files]; // a live FileList is emptied when the input is reset, so copy it first
   const list = $('#upList'); let ok = 0;
   for (const f of files) {
     const id = 'u' + Math.random().toString(36).slice(2, 8);

@@ -33,6 +33,11 @@ def main() -> int:
             page.wait_for_timeout(500)
             page.screenshot(path=str(OUT / f"{name}.png"))
 
+        # multi-file upload regression: a live FileList used to be emptied after the first file
+        ml = Path(__file__).resolve().parent.parent / "data" / "sample_courses" / "ml"
+        page.set_input_files("#file", [str(ml / "ml_notes.md"), str(ml / "lecture_transcript.vtt"), str(ml / "model_selection_chapter.pdf")])
+        page.wait_for_function("document.querySelectorAll('#upList .chip.ok').length >= 3", timeout=120000)
+        shot("0_multi_upload")
         page.click("#btnSample")
         page.wait_for_function("document.querySelector('#analyzeStat').textContent.includes('✓')", timeout=240000)
         shot("1_library")

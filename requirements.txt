@@ -1,7 +1,11 @@
+# runtime
 fastapi>=0.110
 uvicorn>=0.29
-pymupdf>=1.24
-python-pptx>=0.6.23
+python-multipart>=0.0.9
+pydantic>=2
 scikit-learn>=1.4
 numpy>=1.26
-python-multipart>=0.0.9
+pymupdf>=1.24
+python-pptx>=0.6.23
+pillow>=10
+faster-whisper>=1.0      # audio/video transcription (optional: transcripts still work without it)

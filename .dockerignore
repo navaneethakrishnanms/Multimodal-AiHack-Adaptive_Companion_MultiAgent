@@ -1,0 +1,8 @@
+.git
+.env
+data/uploads
+data/students
+__pycache__
+shots*
+demo
+*.whisper.json

@@ -90,7 +90,7 @@ class Course:
             )
             from . import llm
 
-            if seed and (prefer_seed or not llm.available()):
+            if prefer_seed and seed or (seed and not llm.available()):
                 out = seed
             else:
                 out = build_topics(self.kb)

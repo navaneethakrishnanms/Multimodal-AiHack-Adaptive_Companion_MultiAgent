@@ -1,0 +1,6 @@
+services:
+  study-companion:
+    build: .
+    ports: ["7861:7861"]
+    env_file: [.env]          # create it from config.example.env (keys never go in the image)
+    volumes: ["./data:/app/data"]

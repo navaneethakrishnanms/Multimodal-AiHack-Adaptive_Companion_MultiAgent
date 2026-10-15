@@ -116,6 +116,47 @@ def pick_units(
     return pool[:n]
 
 
+MAX_ROUNDS = 2
+_NUM = re.compile(r"^\s*[-+]?\d[\d,]*\.?\d*(e[-+]?\d+)?\s*[a-zA-Z%/^²³ ]{0,12}$", re.I)
+
+
+def _screen(questions: list[dict], unit_by_id: dict, known: list[str], topics: list[str],
+            avoid_h: set[str], avoid_s: list[str]) -> list[dict]:
+    """Structural checks + novelty. Rejected questions simply do not count toward the requested number."""
+    kept: list[dict] = []
+    for q in questions:
+        qtext = str(q.get("question", "")).strip()
+        if len(qtext) < 12 or is_repeat(qtext, avoid_h, avoid_s):
+            continue
+        ans = str(q.get("answer", "")).strip()
+        if q.get("type") == "mcq":
+            opts = q.get("options") or []
+            if len(opts) != 4 or len(set(opts)) != 4 or not any(ans and ans in o for o in opts):
+                continue  # broken MCQ: wrong option count, duplicates, or key not among the options
+        elif q.get("type") == "numerical" and not _NUM.match(ans):
+            continue  # a numerical question needs a definite numeric key
+        if len(str(q.get("explanation", "")).strip()) < 8:
+            q["explanation"] = f"See the source passage [{q.get('source_unit_id', '')}]."
+        suid = str(q.get("source_unit_id", "")).strip()
+        if suid not in unit_by_id:
+            m = re.search(r"\[(u[0-9a-f]{8})\]", str(q.get("explanation", "")) + qtext)
+            suid = m.group(1) if m and m.group(1) in unit_by_id else ""
+        if not suid:
+            continue
+        q["source_unit_id"] = suid
+        q["topic"] = canonical_topic(str(q.get("topic", "")), known)
+        if topics and q["topic"] not in topics:
+            # the model drifted out of scope: use a scoped tag from the source passage instead
+            scoped = [t for t in (unit_by_id[suid].topics or []) if t in topics]
+            q["topic"] = scoped[0] if scoped else q["topic"]
+        q["_hash"] = _stem_hash(qtext)
+        q["_stem"] = stem_norm(qtext)
+        avoid_h.add(q["_hash"])
+        avoid_s.append(q["_stem"])  # also dedupes within this batch
+        kept.append(q)
+    return kept
+
+
 def generate(
     kb: KnowledgeBase,
     topics: list[str],
@@ -139,49 +180,34 @@ def generate(
     known = known_topics or sorted({t for u in kb.units for t in (u.topics or [])})
     avoid_h, avoid_s = set(avoid_hashes or ()), list(avoid_stems or [])
 
-    questions: list[dict] = []
-    if llm.available():
-        try:
-            questions = _llm_questions(units, topics, known, count, difficulty, types, avoid_s)
-        except Exception:
-            questions = []
-    if not questions:
-        focus = set().union(*(topic_terms.get(x, set()) for x in topics)) if topic_terms and topics else None
-        questions = offline.cloze_questions(
-            kb, units, count + 2, types, seed=rng.randint(0, 10**6), topic_names=topics or known, focus_terms=focus or None
-        )
-
     unit_by_id = {u.id: u for u in kb.units}
-    kept: list[dict] = []
-    for q in questions:
-        qtext = str(q.get("question", "")).strip()
-        if len(qtext) < 12 or is_repeat(qtext, avoid_h, avoid_s):
-            continue
-        if q.get("type") == "mcq":
-            opts = q.get("options") or []
-            ans = str(q.get("answer", "")).strip()
-            if len(opts) != 4 or not any(ans and ans in o for o in opts):
-                continue  # broken MCQ
-        suid = str(q.get("source_unit_id", "")).strip()
-        if suid not in unit_by_id:
-            m = re.search(r"\[(u[0-9a-f]{8})\]", str(q.get("explanation", "")) + qtext)
-            suid = m.group(1) if m and m.group(1) in unit_by_id else ""
-        if not suid:
-            continue
-        q["source_unit_id"] = suid
-        q["topic"] = canonical_topic(str(q.get("topic", "")), known)
-        if topics and q["topic"] not in topics:
-            # the model drifted out of scope: use a scoped tag from the source passage instead
-            scoped = [t for t in (unit_by_id[suid].topics or []) if t in topics]
-            q["topic"] = scoped[0] if scoped else q["topic"]
-        q["_hash"] = _stem_hash(qtext)
-        q["_stem"] = stem_norm(qtext)
-        avoid_h.add(q["_hash"])
-        avoid_s.append(q["_stem"])  # also dedupes within this batch
-        kept.append(q)
-
-    if verify:
-        kept = [q for q in (_verify(q, unit_by_id[q["source_unit_id"]]) for q in kept) if q]
+    final: list[dict] = []
+    used = dict(used_units or {})
+    rounds = MAX_ROUNDS if llm.available() else 1  # reject -> regenerate only helps when a model writes the questions
+    for rnd in range(rounds):
+        need = count - len(final)
+        if need <= 0:
+            break
+        if rnd:  # regenerate the shortfall from the least-used other passages
+            units = pick_units(kb, topics, 8, rng, used)
+        for u in units:
+            used[u.id] = used.get(u.id, 0) + 1
+        questions: list[dict] = []
+        if llm.available():
+            try:
+                questions = _llm_questions(units, topics, known, need, difficulty, types, avoid_s)
+            except Exception:
+                questions = []
+        if not questions:
+            focus = set().union(*(topic_terms.get(x, set()) for x in topics)) if topic_terms and topics else None
+            questions = offline.cloze_questions(
+                kb, units, need + 2, types, seed=rng.randint(0, 10**6), topic_names=topics or known, focus_terms=focus or None
+            )
+        kept = _screen(questions, unit_by_id, known, topics, avoid_h, avoid_s)
+        if verify:
+            kept = [q for q in (_verify(q, unit_by_id[q["source_unit_id"]]) for q in kept) if q]
+        final.extend(kept)
+    kept = final
     if difficulty != "mixed":
         matching = [q for q in kept if q.get("difficulty") == difficulty]
         kept = matching or kept

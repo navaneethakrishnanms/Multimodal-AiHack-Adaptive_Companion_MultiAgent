@@ -138,12 +138,16 @@ def kb_info() -> dict:
     }
 
 
+class AnalyzeIn(BaseModel):
+    mode: str = "auto"  # auto: curated map for the bundled sample course, else LLM/heuristic | llm: never use the curated map
+
+
 @app.post("/api/analyze")
-def analyze() -> dict:
+def analyze(inp: AnalyzeIn | None = None) -> dict:
     """Build the topic map + prerequisite graph."""
     if not course.kb.units:
         raise HTTPException(400, "No material uploaded yet")
-    out = course.analyze()
+    out = course.analyze(prefer_seed=(inp or AnalyzeIn()).mode != "llm")
     return {"topics": course.topics, "mode": out.get("mode", ""), "edges": sum(len(v) for v in course.graph.values())}
 
 
